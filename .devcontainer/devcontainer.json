@@ -1,0 +1,35 @@
+{
+  "name": "ARD Audiothek RSS Adapter",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "runArgs": ["--init"],
+  "forwardPorts": [8411],
+  "portsAttributes": {
+    "8411": {
+      "label": "Ktor Server"
+    }
+  },
+  "postCreateCommand": "mvn -version",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fwcd.kotlin",
+        "vscjava.vscode-java-pack",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "GraalVM",
+            "path": "/opt/graalvm-community-jdk-22.0.2",
+            "default": true
+          }
+        ],
+        "kotlin.compiler.languageVersion": "2.0"
+      }
+    }
+  }
+}

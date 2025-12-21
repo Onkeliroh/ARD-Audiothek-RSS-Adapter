@@ -1,0 +1,29 @@
+# Build outputs
+/target/
+/build/
+/out/
+
+# IDE metadata
+/.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Maven & Gradle caches
+.mvn/wrapper/maven-wrapper.jar
+/.gradle/
+
+# Logs & temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Kotlin/Java tooling
+hs_err_pid*
+.repro
