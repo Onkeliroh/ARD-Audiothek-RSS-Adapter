@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  package:
+    name: Build ${{ matrix.artifact_suffix }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux-x64
+            archive_ext: tar.gz
+          - os: windows-latest
+            artifact_suffix: windows-x64
+            archive_ext: zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B verify
+
+      - name: Read project version (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+          echo "PROJECT_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Read project version (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = & mvn -q -DforceStdout help:evaluate -Dexpression=project.version
+          $version = $version.Trim()
+          Add-Content -Path $env:GITHUB_ENV -Value "PROJECT_VERSION=$version"
+      - name: Assemble Linux package
+        if: runner.os != 'Windows'
+        run: |
+          set -euo pipefail
+          DIST_DIR="dist/linux-x64"
+          mkdir -p "$DIST_DIR"
+          JAR_FILE=$(find target -maxdepth 1 -type f -name '*.jar' ! -name '*sources.jar' ! -name '*javadoc.jar' ! -name 'original-*' | head -n 1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "No runnable JAR found" >&2
+            exit 1
+          fi
+          cp "$JAR_FILE" "$DIST_DIR/"
+          JAR_BASENAME=$(basename "$JAR_FILE")
+          printf '%s\n' '#!/usr/bin/env bash' 'SCRIPT_DIR=$(cd -- "$(dirname "$0")" && pwd)' "exec java -jar \"\$SCRIPT_DIR/$JAR_BASENAME\" \"\$@\"" > "$DIST_DIR/run.sh"
+          chmod +x "$DIST_DIR/run.sh"
+          ARCHIVE_NAME="ard-audiothek-rss-adapter-${PROJECT_VERSION}-linux-x64.tar.gz"
+          tar -C "$DIST_DIR" -czf "$ARCHIVE_NAME" .
+          echo "PACKAGE_NAME=$ARCHIVE_NAME" >> "$GITHUB_ENV"
+
+      - name: Assemble Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist = "dist/windows-x64"
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+          $jar = Get-ChildItem -Path target -File -Filter *.jar | Where-Object { $_.Name -notmatch 'sources|javadoc|original-' } | Select-Object -First 1
+          if (-not $jar) { throw "No runnable JAR found" }
+          Copy-Item -Path $jar.FullName -Destination $dist
+          $jarName = $jar.Name
+          $runScript = "@echo off`r`nset SCRIPT_DIR=%~dp0`r`njava -jar \"%SCRIPT_DIR%$jarName\" %*`r`n"
+          Set-Content -Path (Join-Path $dist 'run.bat') -Value $runScript -Encoding ascii
+          $archive = "ard-audiothek-rss-adapter-$env:PROJECT_VERSION-windows-x64.zip"
+          Compress-Archive -Path (Join-Path $dist '*') -DestinationPath $archive -Force
+          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$archive"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.artifact_suffix }}
+          path: ${{ env.PACKAGE_NAME }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/**/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
