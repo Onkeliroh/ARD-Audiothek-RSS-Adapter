@@ -193,6 +193,14 @@
                             <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
                             <imageName>${graalvm.native.image.name}</imageName>
                             <fallback>false</fallback>
+                            <resources>
+                                <resource>
+                                    <includes>
+                                        <include>application.conf</include>
+                                        <include>logback.xml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
                             <buildArgs>
                                 <buildArg>--install-exit-handlers</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
