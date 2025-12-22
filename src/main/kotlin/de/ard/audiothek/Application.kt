@@ -7,6 +7,7 @@ import de.ard.audiothek.ard.ShowParsingException
 import de.ard.audiothek.ard.ShowRetrievalException
 import de.ard.audiothek.rss.RssFeedBuilder
 import de.ard.audiothek.rss.RssFeedCache
+import de.ard.audiothek.ui.feedMapperPage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
@@ -17,11 +18,12 @@ import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.application.pluginOrNull
+import io.ktor.server.html.respondHtml
 import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.plugins.statuspages.exception
-import io.ktor.server.response.respondText
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.util.getOrFail
@@ -62,7 +64,9 @@ fun Application.module() {
 
     routing {
         get("/") {
-            call.respondText(landingPageHtml, ContentType.Text.Html.withCharset(Charsets.UTF_8))
+            call.respondHtml(HttpStatusCode.OK) {
+                feedMapperPage()
+            }
         }
         get("/health") {
             call.respondText("ARD Audiothek RSS Adapter is running.")
@@ -76,12 +80,6 @@ fun Application.module() {
             call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
         }
     }
-}
-
-private val landingPageHtml: String by lazy {
-    val resource = Application::class.java.classLoader.getResourceAsStream("feed-mapper.html")
-        ?: error("feed-mapper.html is missing from resources")
-    resource.bufferedReader(Charsets.UTF_8).use { it.readText() }
 }
 
 private fun Application.resolveRssCacheTtl(): Duration {
