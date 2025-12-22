@@ -42,11 +42,11 @@ class ApplicationTest {
         environment {
             config = MapApplicationConfig()
         }
-        val sampleHtml = this::class.java.getResource("/sample-show.html")?.readText()
-            ?: error("sample-show.html test resource missing")
+        val sampleHtml = this::class.java.getResource("/Jagd auf Fantomas.html")?.readText()
+            ?: error("Jagd auf Fantomas.html test resource missing")
         val parser = ArdShowPageParser(jacksonObjectMapper())
         val parsedShow = parser.parse(sampleHtml)
-        assertEquals("Sample Show", parsedShow.title)
+        assertEquals("Jagd auf Fantomas | ARD Hörspiel-Serie", parsedShow.title)
         var requestCount = 0
         val engine = MockEngine { request ->
             requestCount++
@@ -75,14 +75,14 @@ class ApplicationTest {
             )
         }
 
-        val firstResponse = client.get("/rss/feed/urn:ard:show:sample")
+        val firstResponse = client.get("/rss/feed/urn:ard:show:ef3205b54d97da0e")
         val firstBody = firstResponse.bodyAsText()
         assertEquals(HttpStatusCode.OK, firstResponse.status, "body: $firstBody")
         val feed = SyndFeedInput().build(StringReader(firstBody))
-        assertEquals("Sample Show", feed.title)
-        assertEquals(2, feed.entries.size)
+        assertEquals("Jagd auf Fantomas | ARD Hörspiel-Serie", feed.title)
+        assertEquals(12, feed.entries.size)
 
-        val secondResponse = client.get("/rss/feed/urn:ard:show:sample")
+        val secondResponse = client.get("/rss/feed/urn:ard:show:ef3205b54d97da0e")
         val secondBody = secondResponse.bodyAsText()
         assertEquals(HttpStatusCode.OK, secondResponse.status, "body: $secondBody")
         assertEquals(firstBody, secondBody)

@@ -2,7 +2,6 @@ package de.ard.audiothek.ard
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -14,21 +13,24 @@ class ArdShowPageParserTest {
 
     @Test
     fun `parses show details from NEXT data`() {
-        val html = this::class.java.getResource("/sample-show.html")?.readText()
-            ?: error("sample-show.html test resource missing")
+        val html = this::class.java.getResource("/Jagd auf Fantomas.html")?.readText()
+            ?: error("Jagd auf Fantomas.html test resource missing")
 
         val show = parser.parse(html)
 
-        assertEquals("Sample Show", show.title)
-        assertEquals("https://www.ardaudiothek.de/sendung/sample-show/urn:ard:show:sample/", show.canonicalUrl)
-        assertFalse(show.hasMoreEpisodes)
-        assertEquals(2, show.episodes.size)
+        assertEquals("Jagd auf Fantomas | ARD Hörspiel-Serie", show.title)
+        assertEquals(
+            "https://www.ardaudiothek.de/sendung/jagd-auf-fantomas-ard-hoerspiel-serie/urn:ard:show:ef3205b54d97da0e/",
+            show.canonicalUrl
+        )
+        assertTrue(show.hasMoreEpisodes)
+        assertEquals(12, show.episodes.size)
 
         val first = show.episodes.first()
-        assertEquals("Episode One", first.title)
-        assertEquals("https://www.ardaudiothek.de/episode/urn:ard:episode:1/", first.link)
+        assertEquals("Jagd auf Fantomas (Trailer) ", first.title)
+        assertEquals("https://www.ardaudiothek.de/episode/urn:ard:extra:95856bc858a741da/", first.link)
         assertNotNull(first.audio)
-        assertEquals("https://cdn.example.com/audio-one.mp3", first.audio?.url)
+        assertTrue(first.audio?.url?.endsWith(".mp3") == true)
     }
 
         @Test

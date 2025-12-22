@@ -19,8 +19,8 @@ import kotlin.text.Charsets
 
 class ShowPageClientTest {
     private val parser = ArdShowPageParser(jacksonObjectMapper())
-    private val sampleHtml: String = this::class.java.getResource("/sample-show.html")?.readText()
-        ?: error("sample-show.html test resource missing")
+    private val sampleHtml: String = this::class.java.getResource("/Jagd auf Fantomas.html")?.readText()
+        ?: error("Jagd auf Fantomas.html test resource missing")
 
     @Test
     fun `fetchShow resolves urn ids and forwards headers`() = runBlocking {
@@ -38,11 +38,11 @@ class ShowPageClientTest {
         val httpClient = HttpClient(engine)
         val client = ShowPageClient(httpClient, parser)
 
-        val show = client.fetchShow("urn:ard:show:sample")
+        val show = client.fetchShow("urn:ard:show:ef3205b54d97da0e")
 
-        assertEquals("Sample Show", show.title)
+        assertEquals("Jagd auf Fantomas | ARD Hörspiel-Serie", show.title)
         val request = requireNotNull(capturedRequest)
-        assertEquals("https://www.ardaudiothek.de/sendung/urn:ard:show:sample/", request.url.toString())
+        assertEquals("https://www.ardaudiothek.de/sendung/urn:ard:show:ef3205b54d97da0e/", request.url.toString())
         assertTrue(request.headers[HttpHeaders.Accept]?.contains("text/html") == true)
         assertEquals("de-DE,de;q=0.9", request.headers[HttpHeaders.AcceptLanguage])
     }
@@ -60,7 +60,7 @@ class ShowPageClientTest {
         val client = ShowPageClient(httpClient, parser)
 
         val error = assertFailsWith<ShowRetrievalException> {
-            client.fetchShow("/sendung/sample-show/")
+            client.fetchShow("/sendung/jagd-auf-fantomas-ard-hoerspiel-serie/urn:ard:show:ef3205b54d97da0e/")
         }
         assertTrue(error.message!!.contains("502"))
     }

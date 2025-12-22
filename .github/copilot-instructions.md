@@ -14,7 +14,7 @@
 - Default server config is in `src/main/resources/application.conf`. `ktor.deployment.port` honors the `PORT` env var automatically; add new settings here rather than sprinkling `System.getenv()` calls.
 
 ## Build, Run, Test
-- Standard workflow: `mvn clean verify` for full compile + JUnit 5 suites (`ApplicationTest`, `ArdShowPageParserTest`). These tests spin up an in-memory Ktor app and parse the sample HTML at `src/test/resources/sample-show.html`.
+- Standard workflow: `mvn clean verify` for full compile + JUnit 5 suites (`ApplicationTest`, `ArdShowPageParserTest`). These tests spin up an in-memory Ktor app and parse the real-world HTML at `src/test/resources/Jagd auf Fantomas.html`.
 - Local dev run: `mvn exec:java -Dexec.mainClass=de.ard.audiothek.ApplicationKt` or `java -jar target/ard-audiothek-rss-adapter-1.0-SNAPSHOT.jar` after packaging.
 - Native image: `mvn -Pnative -DskipTests package` generates `target/native/ard-audiothek-rss-adapter`. Ensure your machine provides GraalVM + matching architecture before invoking the profile.
 
