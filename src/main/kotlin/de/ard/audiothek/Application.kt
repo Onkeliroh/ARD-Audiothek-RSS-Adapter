@@ -20,7 +20,7 @@ import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.application.pluginOrNull
 import io.ktor.server.html.respondHtml
-import io.ktor.server.netty.EngineMain
+import com.typesafe.config.ConfigFactory
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.plugins.statuspages.exception
 import io.ktor.server.response.respond
@@ -28,11 +28,38 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.util.getOrFail
+import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.HoconApplicationConfig
+import io.ktor.server.engine.applicationEngineEnvironment
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.engine.connector
+import io.ktor.server.netty.Netty
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import kotlin.text.Charsets
 
-fun main(args: Array<String>) {
-    EngineMain.main(args)
+fun main() {
+    val config = HoconApplicationConfig(ConfigFactory.load())
+    val environment = applicationEngineEnvironment {
+        this.config = config
+        log = LoggerFactory.getLogger("Application")
+        module {
+            module()
+        }
+        connector {
+            host = config.propertyOrNull("ktor.deployment.host")?.getString() ?: "0.0.0.0"
+            port = resolvePort(config)
+        }
+    }
+    embeddedServer(Netty, environment).start(wait = true)
+}
+
+private fun resolvePort(config: ApplicationConfig): Int {
+    val envPort = System.getenv("PORT")?.toIntOrNull()
+    if (envPort != null) {
+        return envPort
+    }
+    return config.propertyOrNull("ktor.deployment.port")?.getString()?.toIntOrNull() ?: 8080
 }
 
 @Suppress("unused")
