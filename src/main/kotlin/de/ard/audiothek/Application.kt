@@ -58,6 +58,9 @@ fun Application.module() {
 
     routing {
         get("/") {
+            call.respondText(landingPageHtml, ContentType.Text.Html.withCharset(Charsets.UTF_8))
+        }
+        get("/health") {
             call.respondText("ARD Audiothek RSS Adapter is running.")
         }
         get("/rss/feed/{feedId}") {
@@ -67,4 +70,10 @@ fun Application.module() {
             call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
         }
     }
+}
+
+private val landingPageHtml: String by lazy {
+    val resource = Application::class.java.classLoader.getResourceAsStream("feed-mapper.html")
+        ?: error("feed-mapper.html is missing from resources")
+    resource.bufferedReader(Charsets.UTF_8).use { it.readText() }
 }
