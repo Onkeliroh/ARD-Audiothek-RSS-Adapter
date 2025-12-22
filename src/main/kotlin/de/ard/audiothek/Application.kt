@@ -6,6 +6,7 @@ import de.ard.audiothek.ard.ShowPageClient
 import de.ard.audiothek.ard.ShowParsingException
 import de.ard.audiothek.ard.ShowRetrievalException
 import de.ard.audiothek.rss.RssFeedBuilder
+import de.ard.audiothek.rss.RssFeedCache
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
@@ -24,6 +25,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.util.getOrFail
+import java.time.Duration
 import kotlin.text.Charsets
 
 fun main(args: Array<String>) {
@@ -38,6 +40,8 @@ fun Application.module() {
     val parser = ArdShowPageParser(jacksonObjectMapper())
     val showClient = ShowPageClient(httpClient, parser)
     val rssBuilder = RssFeedBuilder()
+    val rssCacheTtl = resolveRssCacheTtl()
+    val rssCache = RssFeedCache(rssCacheTtl)
 
     environment.monitor.subscribe(ApplicationStopped) { httpClient.close() }
 
@@ -65,8 +69,10 @@ fun Application.module() {
         }
         get("/rss/feed/{feedId}") {
             val feedId = call.parameters.getOrFail("feedId")
-            val show = showClient.fetchShow(feedId)
-            val rss = rssBuilder.build(show)
+            val rss = rssCache.getOrPut(feedId) {
+                val show = showClient.fetchShow(feedId)
+                rssBuilder.build(show)
+            }
             call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
         }
     }
@@ -76,4 +82,11 @@ private val landingPageHtml: String by lazy {
     val resource = Application::class.java.classLoader.getResourceAsStream("feed-mapper.html")
         ?: error("feed-mapper.html is missing from resources")
     resource.bufferedReader(Charsets.UTF_8).use { it.readText() }
+}
+
+private fun Application.resolveRssCacheTtl(): Duration {
+    val defaultTtl = Duration.ofHours(6)
+    val configValue = environment.config.propertyOrNull("audiothek.rssCache.ttlSeconds")?.getString()
+    val seconds = configValue?.toLongOrNull()
+    return seconds?.takeIf { it > 0 }?.let { Duration.ofSeconds(it) } ?: defaultTtl
 }
