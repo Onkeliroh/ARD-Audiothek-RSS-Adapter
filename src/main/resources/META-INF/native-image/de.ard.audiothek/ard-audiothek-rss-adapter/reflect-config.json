@@ -1,0 +1,13 @@
+[
+  {
+    "name": "de.ard.audiothek.ApplicationKt",
+    "methods": [
+      {
+        "name": "module",
+        "parameterTypes": [
+          "io.ktor.server.application.Application"
+        ]
+      }
+    ]
+  }
+]

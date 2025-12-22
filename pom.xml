@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.ard.audiothek</groupId>
     <artifactId>ard-audiothek-rss-adapter</artifactId>
@@ -16,6 +15,7 @@
         <jvm.target>22</jvm.target>
         <graalvm.native.plugin.version>0.10.2</graalvm.native.plugin.version>
         <graalvm.native.image.name>${project.artifactId}</graalvm.native.image.name>
+        <slf4j.version>2.0.13</slf4j.version>
     </properties>
 
     <repositories>
@@ -43,6 +43,16 @@
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-core-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
             <artifactId>ktor-server-netty-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
@@ -67,14 +77,9 @@
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-core-jvm</artifactId>
-            <version>${ktor.version}</version>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.14</version>
+            <version>1.5.6</version>
         </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -189,6 +194,7 @@
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
                         <version>${graalvm.native.plugin.version}</version>
+                        <extensions>true</extensions>
                         <configuration>
                             <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
                             <imageName>${graalvm.native.image.name}</imageName>
@@ -204,7 +210,11 @@
                             <buildArgs>
                                 <buildArg>--install-exit-handlers</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>-H:MissingRegistrationReportingMode=Warn</buildArg>
                             </buildArgs>
+                            <agent>
+                                <enabled>true</enabled>
+                            </agent>
                         </configuration>
                         <executions>
                             <execution>
@@ -213,6 +223,13 @@
                                 <goals>
                                     <goal>compile-no-fork</goal>
                                 </goals>
+                            </execution>
+                            <execution>
+                                <id>test-native</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>test</phase>
                             </execution>
                         </executions>
                     </plugin>
