@@ -9,6 +9,7 @@ import de.ard.audiothek.rss.RssFeedBuilder
 import de.ard.audiothek.rss.RssFeedCache
 import de.ard.audiothek.ui.feedMapperPage
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -35,15 +36,11 @@ fun main(args: Array<String>) {
 }
 
 @Suppress("unused")
-fun Application.module() {
-    val httpClient = HttpClient(CIO) {
-        expectSuccess = false
-    }
-    val parser = ArdShowPageParser(jacksonObjectMapper())
-    val showClient = ShowPageClient(httpClient, parser)
-    val rssBuilder = RssFeedBuilder()
-    val rssCacheTtl = resolveRssCacheTtl()
-    val rssCache = RssFeedCache(rssCacheTtl)
+fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.create(this)) {
+    val httpClient = dependencies.httpClient
+    val showClient = dependencies.showClient
+    val rssBuilder = dependencies.rssBuilder
+    val rssCache = dependencies.rssCache
 
     environment.monitor.subscribe(ApplicationStopped) { httpClient.close() }
 
@@ -87,4 +84,28 @@ private fun Application.resolveRssCacheTtl(): Duration {
     val configValue = environment.config.propertyOrNull("audiothek.rssCache.ttlSeconds")?.getString()
     val seconds = configValue?.toLongOrNull()
     return seconds?.takeIf { it > 0 }?.let { Duration.ofSeconds(it) } ?: defaultTtl
+}
+
+data class ModuleDependencies(
+    val httpClient: HttpClient,
+    val parser: ArdShowPageParser,
+    val showClient: ShowPageClient,
+    val rssBuilder: RssFeedBuilder,
+    val rssCache: RssFeedCache
+) {
+    companion object {
+        fun create(
+            application: Application,
+            engine: HttpClientEngine = CIO.create()
+        ): ModuleDependencies {
+            val httpClient = HttpClient(engine) {
+                expectSuccess = false
+            }
+            val parser = ArdShowPageParser(jacksonObjectMapper())
+            val showClient = ShowPageClient(httpClient, parser)
+            val rssBuilder = RssFeedBuilder()
+            val rssCache = RssFeedCache(application.resolveRssCacheTtl())
+            return ModuleDependencies(httpClient, parser, showClient, rssBuilder, rssCache)
+        }
+    }
 }
