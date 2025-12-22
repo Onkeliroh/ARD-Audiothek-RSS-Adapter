@@ -53,7 +53,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           set -euo pipefail
-          BINARY="target/native/ard-audiothek-rss-adapter"
+          BINARY="target/ard-audiothek-rss-adapter"
           if [ ! -f "$BINARY" ]; then
             echo "Native binary not found at $BINARY" >&2
             exit 1
@@ -67,7 +67,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $binary = Join-Path -Path "target" -ChildPath "native/ard-audiothek-rss-adapter.exe"
+          $binary = Join-Path -Path "target" -ChildPath "ard-audiothek-rss-adapter.exe"
           if (-not (Test-Path $binary)) {
             throw "Native binary not found at $binary"
           }
