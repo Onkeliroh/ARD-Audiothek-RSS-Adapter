@@ -124,6 +124,23 @@ jobs:
         with:
           path: release-assets
 
+      - name: Keep only distributable binaries
+        run: |
+          set -euo pipefail
+          mkdir -p release-binaries
+          shopt -s globstar nullglob
+          found=false
+          for file in release-assets/**/ard-audiothek-rss-adapter*; do
+            cp "$file" release-binaries/
+            found=true
+          done
+          if [ "$found" = false ]; then
+            echo "No release binaries were found to publish" >&2
+            exit 1
+          fi
+          rm -rf release-assets
+          mv release-binaries release-assets
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
