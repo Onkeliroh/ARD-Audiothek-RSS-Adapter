@@ -15,6 +15,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.withCharset
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.call
 import io.ktor.server.application.install
@@ -40,6 +41,8 @@ import kotlin.text.Charsets
 
 fun main() {
     val config = HoconApplicationConfig(ConfigFactory.load())
+    val host = config.propertyOrNull("ktor.deployment.host")?.getString() ?: "0.0.0.0"
+    val port = resolvePort(config)
     val environment = applicationEngineEnvironment {
         this.config = config
         log = LoggerFactory.getLogger("Application")
@@ -47,9 +50,13 @@ fun main() {
             module()
         }
         connector {
-            host = config.propertyOrNull("ktor.deployment.host")?.getString() ?: "0.0.0.0"
-            port = resolvePort(config)
+            this.host = host
+            this.port = port
         }
+    }
+    val displayHost = if (host == "0.0.0.0") "localhost" else host
+    environment.monitor.subscribe(ApplicationStarted) {
+        environment.log.info("Server ready: http://$displayHost:$port/")
     }
     embeddedServer(Netty, environment).start(wait = true)
 }
