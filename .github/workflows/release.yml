@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 22
+      - name: Set up GraalVM 22
         uses: actions/setup-java@v4
         with:
           distribution: graalvm
@@ -32,6 +32,9 @@ jobs:
 
       - name: Build and test
         run: mvn -B verify
+
+      - name: Build native image
+        run: mvn -B -Pnative -DskipTests package
 
       - name: Read project version (Unix)
         if: runner.os != 'Windows'
@@ -46,40 +49,31 @@ jobs:
           $version = & mvn -q -DforceStdout help:evaluate -Dexpression=project.version
           $version = $version.Trim()
           Add-Content -Path $env:GITHUB_ENV -Value "PROJECT_VERSION=$version"
-      - name: Assemble Linux package
+      - name: Prepare Linux binary
         if: runner.os != 'Windows'
         run: |
           set -euo pipefail
-          DIST_DIR="dist/linux-x64"
-          mkdir -p "$DIST_DIR"
-          JAR_FILE=$(find target -maxdepth 1 -type f -name '*.jar' ! -name '*sources.jar' ! -name '*javadoc.jar' ! -name 'original-*' | head -n 1)
-          if [ -z "$JAR_FILE" ]; then
-            echo "No runnable JAR found" >&2
+          BINARY="target/native/ard-audiothek-rss-adapter"
+          if [ ! -f "$BINARY" ]; then
+            echo "Native binary not found at $BINARY" >&2
             exit 1
           fi
-          cp "$JAR_FILE" "$DIST_DIR/"
-          JAR_BASENAME=$(basename "$JAR_FILE")
-          printf '%s\n' '#!/usr/bin/env bash' 'SCRIPT_DIR=$(cd -- "$(dirname "$0")" && pwd)' "exec java -jar \"\$SCRIPT_DIR/$JAR_BASENAME\" \"\$@\"" > "$DIST_DIR/run.sh"
-          chmod +x "$DIST_DIR/run.sh"
-          ARCHIVE_NAME="ard-audiothek-rss-adapter-${PROJECT_VERSION}-linux-x64.tar.gz"
-          tar -C "$DIST_DIR" -czf "$ARCHIVE_NAME" .
-          echo "PACKAGE_NAME=$ARCHIVE_NAME" >> "$GITHUB_ENV"
+          OUTPUT="ard-audiothek-rss-adapter-${PROJECT_VERSION}-linux-x64"
+          cp "$BINARY" "$OUTPUT"
+          chmod +x "$OUTPUT"
+          echo "PACKAGE_NAME=$OUTPUT" >> "$GITHUB_ENV"
 
-      - name: Assemble Windows package
+      - name: Prepare Windows binary
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $dist = "dist/windows-x64"
-          New-Item -ItemType Directory -Path $dist -Force | Out-Null
-          $jar = Get-ChildItem -Path target -File -Filter *.jar | Where-Object { $_.Name -notmatch 'sources|javadoc|original-' } | Select-Object -First 1
-          if (-not $jar) { throw "No runnable JAR found" }
-          Copy-Item -Path $jar.FullName -Destination $dist
-          $jarName = $jar.Name
-          $runScript = "@echo off`r`nset SCRIPT_DIR=%~dp0`r`njava -jar \"%SCRIPT_DIR%$jarName\" %*`r`n"
-          Set-Content -Path (Join-Path $dist 'run.bat') -Value $runScript -Encoding ascii
-          $archive = "ard-audiothek-rss-adapter-$env:PROJECT_VERSION-windows-x64.zip"
-          Compress-Archive -Path (Join-Path $dist '*') -DestinationPath $archive -Force
-          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$archive"
+          $binary = Join-Path -Path "target" -ChildPath "native/ard-audiothek-rss-adapter.exe"
+          if (-not (Test-Path $binary)) {
+            throw "Native binary not found at $binary"
+          }
+          $output = "ard-audiothek-rss-adapter-$env:PROJECT_VERSION-windows-x64.exe"
+          Copy-Item -Path $binary -Destination $output -Force
+          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$output"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
