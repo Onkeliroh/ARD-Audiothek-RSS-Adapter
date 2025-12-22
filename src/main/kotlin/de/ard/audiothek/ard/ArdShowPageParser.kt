@@ -30,9 +30,10 @@ class ArdShowPageParser(
         val path = resultNode.path("path").asText("")
         val imageUrl = extractImageUrl(resultNode.path("image"))
 
-        val episodes = resultNode.path("items").path("nodes")
-            .mapNotNull { node -> mapEpisode(node) }
-        val hasMore = resultNode.path("items").path("pageInfo").path("hasNextPage").asBoolean(false)
+            val episodesNode = resultNode.path("items")
+            val episodes = episodesNode.path("nodes")
+                .mapNotNull { node -> mapEpisode(node) }
+            val hasMore = episodesNode.path("pageInfo").path("hasNextPage").asBoolean(false)
 
         return ShowDetails(
             id = resultNode.path("coreId").asText(resultNode.path("id").asText("")),
@@ -52,7 +53,10 @@ class ArdShowPageParser(
         val publishDate = node.path("publishDate").asText(null)?.let { parseInstant(it) }
         val durationSeconds = node.path("duration")?.takeIf { it.isNumber }?.asLong()
         val imageUrl = extractImageUrl(node.path("image"))
-        val audioNode = node.path("audios").takeIf { it.isArray && it.size() > 0 }?.get(0)
+        val audioNode = node.path("audios").takeIf { it.isArray && it.size() > 0 }?.firstOrNull { candidate ->
+            val url = candidate.path("url").asText("")
+            url.startsWith("http", ignoreCase = true)
+        } ?: node.path("audios").takeIf { it.isArray && it.size() > 0 }?.get(0)
         val audio = audioNode?.let {
             AudioAsset(
                 url = it.path("url").asText(""),
@@ -78,10 +82,14 @@ class ArdShowPageParser(
         val script = document.selectFirst("script#__NEXT_DATA__")
             ?: throw ShowParsingException("__NEXT_DATA__ script tag is missing from the ARD Audiothek page")
         val payload = script.data()
-        if (payload.isNullOrBlank()) {
-            throw ShowParsingException("__NEXT_DATA__ payload is empty")
-        }
-        return objectMapper.readTree(payload)
+            if (payload.isNullOrBlank()) {
+                throw ShowParsingException("__NEXT_DATA__ payload is empty")
+            }
+            return try {
+                objectMapper.readTree(payload)
+            } catch (ex: Exception) {
+                throw ShowParsingException("__NEXT_DATA__ payload could not be parsed: ${ex.message}")
+            }
     }
 
     private fun parseInstant(raw: String): Instant? = try {

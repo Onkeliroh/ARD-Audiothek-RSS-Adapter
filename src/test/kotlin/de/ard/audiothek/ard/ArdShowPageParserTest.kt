@@ -122,6 +122,86 @@ class ArdShowPageParserTest {
                 }
         }
 
+        @Test
+        fun `parse throws when NEXT payload is empty`() {
+                val html = """
+                        <html>
+                            <body>
+                                <script id="__NEXT_DATA__" type="application/json"></script>
+                            </body>
+                        </html>
+                """.trimIndent()
+
+                val error = assertThrows(ShowParsingException::class.java) {
+                        parser.parse(html)
+                }
+                assertTrue(error.message!!.contains("empty"))
+        }
+
+        @Test
+        fun `parse throws when NEXT payload is invalid JSON`() {
+                val html = """
+                        <html>
+                            <body>
+                                <script id="__NEXT_DATA__" type="application/json">{not-json}</script>
+                            </body>
+                        </html>
+                """.trimIndent()
+
+                val error = assertThrows(ShowParsingException::class.java) {
+                        parser.parse(html)
+                }
+                assertTrue(error.message!!.contains("could not be parsed"))
+        }
+
+        @Test
+        fun `parse prefers first usable audio url`() {
+                val html = wrapPayload(
+                        """
+                        {
+                            "props": {
+                                "pageProps": {
+                                    "initialData": {
+                                        "data": {
+                                            "result": {
+                                                "coreId": "urn:ard:show:audio",
+                                                "title": "Audio Pref",
+                                                "description": null,
+                                                "path": "/sendung/audio-pref/",
+                                                "image": { "url": "" },
+                                                "items": {
+                                                    "pageInfo": { "hasNextPage": false },
+                                                    "nodes": [
+                                                        {
+                                                            "coreId": "urn:ard:episode:audio",
+                                                            "title": "Episode",
+                                                            "summary": null,
+                                                            "publishDate": null,
+                                                            "duration": null,
+                                                            "path": "/episode/audio/",
+                                                            "image": { "url": "" },
+                                                            "audios": [
+                                                                { "url": "//relative-path.mp3" },
+                                                                { "url": "https://cdn.example.com/preferred.mp3", "mimeType": "audio/aac" }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """.trimIndent()
+                )
+
+                val show = parser.parse(html)
+                val audio = show.episodes.single().audio
+                assertEquals("https://cdn.example.com/preferred.mp3", audio?.url)
+                assertEquals("audio/aac", audio?.mimeType)
+        }
+
         private fun wrapPayload(payload: String): String = """
                 <html>
                     <body>

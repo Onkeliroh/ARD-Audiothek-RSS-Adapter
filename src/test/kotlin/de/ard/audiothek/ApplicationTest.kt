@@ -88,4 +88,73 @@ class ApplicationTest {
         assertEquals(firstBody, secondBody)
         assertEquals(1, requestCount)
     }
+
+    @Test
+    fun `rss feed bubbling of upstream failures`() = testApplication {
+        environment {
+            config = MapApplicationConfig()
+        }
+        val parser = ArdShowPageParser(jacksonObjectMapper())
+        val engine = MockEngine {
+            respond(
+                content = "upstream-error",
+                status = HttpStatusCode.InternalServerError,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Text.Plain.toString())
+            )
+        }
+        val httpClient = HttpClient(engine)
+        val showClient = ShowPageClient(httpClient, parser)
+        val rssCache = RssFeedCache(Duration.ofMinutes(5))
+
+        application {
+            module(
+                ModuleDependencies(
+                    httpClient = httpClient,
+                    parser = parser,
+                    showClient = showClient,
+                    rssBuilder = RssFeedBuilder(),
+                    rssCache = rssCache
+                )
+            )
+        }
+
+        val response = client.get("/rss/feed/problem")
+        assertEquals(HttpStatusCode.BadGateway, response.status)
+        assertTrue(response.bodyAsText().contains("Failed to fetch show page"))
+    }
+
+    @Test
+    fun `rss feed returns 500 when parser fails`() = testApplication {
+        environment {
+            config = MapApplicationConfig()
+        }
+        val parser = ArdShowPageParser(jacksonObjectMapper())
+        val engine = MockEngine {
+            respond(
+                content = "<html><body>No NEXT data</body></html>",
+                headers = headersOf(
+                    HttpHeaders.ContentType,
+                    ContentType.Text.Html.withCharset(Charsets.UTF_8).toString()
+                )
+            )
+        }
+        val httpClient = HttpClient(engine)
+        val showClient = ShowPageClient(httpClient, parser)
+
+        application {
+            module(
+                ModuleDependencies(
+                    httpClient = httpClient,
+                    parser = parser,
+                    showClient = showClient,
+                    rssBuilder = RssFeedBuilder(),
+                    rssCache = RssFeedCache(Duration.ofMinutes(5))
+                )
+            )
+        }
+
+        val response = client.get("/rss/feed/trigger-parser-error")
+        assertEquals(HttpStatusCode.InternalServerError, response.status)
+        assertTrue(response.bodyAsText().contains("script tag is missing"))
+    }
 }
