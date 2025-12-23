@@ -6,7 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  tests:
+  base-build:
+    name: Base build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,8 +20,15 @@ jobs:
           java-version: 22
           cache: maven
 
-      - name: Run JVM tests
+      - name: Run JVM verify
         run: mvn -B verify
+
+      - name: Upload target directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-target
+          path: target
+          if-no-files-found: error
 
       - name: Upload JaCoCo report
         if: always()
@@ -30,26 +38,33 @@ jobs:
           path: target/site/jacoco
           if-no-files-found: warn
 
-      - name: Run native tests
-        run: mvn -B -Pnative test
-
-  package:
-    needs: tests
-    name: Build ${{ matrix.artifact_suffix }}
+  native-builds:
+    name: Build ${{ matrix.display_name }} native
+    needs: base-build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_suffix: linux-x64
-            archive_ext: tar.gz
+            display_name: Linux x64
+            suffix: linux-x64
+            binary_path: target/ard-audiothek-rss-adapter
+            artifact_name: ard-audiothek-rss-adapter
           - os: windows-latest
-            artifact_suffix: windows-x64
-            archive_ext: zip
+            display_name: Windows x64
+            suffix: windows-x64
+            binary_path: target/ard-audiothek-rss-adapter.exe
+            artifact_name: ard-audiothek-rss-adapter.exe
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Restore JVM outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: jvm-target
+          path: .
 
       - name: Set up GraalVM 22
         uses: actions/setup-java@v4
@@ -58,8 +73,8 @@ jobs:
           java-version: 22
           cache: maven
 
-      - name: Build JVM artifacts
-        run: mvn -B -DskipTests package
+      - name: Run native tests
+        run: mvn -B -Pnative test
 
       - name: Build native image
         run: mvn -B -Pnative -DskipTests package
@@ -79,42 +94,51 @@ jobs:
             $version = $version.Substring(1)
           }
           Add-Content -Path $env:GITHUB_ENV -Value "PROJECT_VERSION=$version"
-      - name: Prepare Linux binary
+
+      - name: Stage native artifact (Linux)
         if: runner.os != 'Windows'
         run: |
           set -euo pipefail
-          BINARY="target/ard-audiothek-rss-adapter"
+          BINARY="${{ matrix.binary_path }}"
           if [ ! -f "$BINARY" ]; then
             echo "Native binary not found at $BINARY" >&2
             exit 1
           fi
-          OUTPUT="ard-audiothek-rss-adapter-${PROJECT_VERSION}-linux-x64"
+          OUTPUT="ard-audiothek-rss-adapter-${PROJECT_VERSION}-${{ matrix.suffix }}"
           cp "$BINARY" "$OUTPUT"
           chmod +x "$OUTPUT"
           echo "PACKAGE_NAME=$OUTPUT" >> "$GITHUB_ENV"
 
-      - name: Prepare Windows binary
+      - name: Stage native artifact (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $binary = Join-Path -Path "target" -ChildPath "ard-audiothek-rss-adapter.exe"
+          $binary = "${{ matrix.binary_path }}"
           if (-not (Test-Path $binary)) {
             throw "Native binary not found at $binary"
           }
-          $output = "ard-audiothek-rss-adapter-$env:PROJECT_VERSION-windows-x64.exe"
+          $output = "ard-audiothek-rss-adapter-$env:PROJECT_VERSION-${{ matrix.suffix }}"
           Copy-Item -Path $binary -Destination $output -Force
           Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$output"
 
-      - name: Upload package artifact
+      - name: Upload native artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.artifact_suffix }}
+          name: release-${{ matrix.suffix }}
           path: ${{ env.PACKAGE_NAME }}
+          if-no-files-found: error
+
+      - name: Share Linux binary for Docker
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-native-binary
+          path: ${{ matrix.binary_path }}
           if-no-files-found: error
 
   docker-image:
     name: Publish Docker image
-    needs: tests
+    needs: native-builds
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -124,6 +148,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Restore native binary
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-native-binary
+          path: target
 
       - name: Determine image coordinates
         run: |
@@ -162,7 +192,7 @@ jobs:
   publish:
     name: Publish release
     needs:
-      - package
+      - native-builds
       - docker-image
     runs-on: ubuntu-latest
     permissions:
