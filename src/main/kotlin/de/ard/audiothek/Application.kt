@@ -7,6 +7,7 @@ import de.ard.audiothek.ard.ShowParsingException
 import de.ard.audiothek.ard.ShowRetrievalException
 import de.ard.audiothek.rss.RssFeedBuilder
 import de.ard.audiothek.rss.RssFeedCache
+import de.ard.audiothek.ui.errorPage
 import de.ard.audiothek.ui.feedMapperPage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
@@ -15,6 +16,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.withCharset
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.call
@@ -75,6 +77,7 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
     val showClient = dependencies.showClient
     val rssBuilder = dependencies.rssBuilder
     val rssCache = dependencies.rssCache
+    val appLogger = this.environment.log
 
     environment.monitor.subscribe(ApplicationStopped) { httpClient.close() }
 
@@ -87,7 +90,7 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
                 call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Failed to parse ARD Audiothek data.")
             }
             exception<Throwable> { call, cause ->
-                this@module.environment.log.error("Unhandled error while rendering RSS feed", cause)
+                appLogger.error("Unhandled error while rendering RSS feed", cause)
                 call.respond(HttpStatusCode.InternalServerError, "Unexpected server error.")
             }
         }
@@ -104,12 +107,27 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
         }
         get("/rss/feed/{feedId}") {
             val feedId = call.parameters.getOrFail("feedId")
-            val rss = rssCache.getOrPut(feedId) {
-                val show = showClient.fetchShow(feedId)
-                rssBuilder.build(show)
+            try {
+                val rss = rssCache.getOrPut(feedId) {
+                    val show = showClient.fetchShow(feedId)
+                    rssBuilder.build(show)
+                }
+                call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
+            } catch (ex: ShowRetrievalException) {
+                call.respondRssError(HttpStatusCode.BadGateway, ex.message ?: "Unable to fetch show page.")
+            } catch (ex: ShowParsingException) {
+                call.respondRssError(HttpStatusCode.InternalServerError, ex.message ?: "Failed to parse ARD Audiothek data.")
+            } catch (ex: Throwable) {
+                appLogger.error("Unhandled error while rendering RSS feed for $feedId", ex)
+                call.respondRssError(HttpStatusCode.InternalServerError, "Unexpected server error.")
             }
-            call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
         }
+    }
+}
+
+private suspend fun ApplicationCall.respondRssError(status: HttpStatusCode, details: String) {
+    respondHtml(status) {
+        errorPage(status.value, details)
     }
 }
 
