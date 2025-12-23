@@ -1,5 +1,6 @@
 # Build artifacts
-/target
+target/
+!target/ard-audiothek-rss-adapter
 
 # VCS metadata
 /.git
