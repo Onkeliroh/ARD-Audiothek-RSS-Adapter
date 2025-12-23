@@ -40,6 +40,14 @@ http://localhost:8411/rss/feed/{feedId}
 ```
 Replace `{feedId}` with the desired ARD Audiothek URN identifier.
 
+## Coverage Report
+
+To generate a code coverage report, run the following Maven command:
+
+```bash
+mvn clean verify jacoco:report
+```
+
 ### Native Build (GraalVM)
 
 To produce a Linux x86_64 native executable, install GraalVM and run:
