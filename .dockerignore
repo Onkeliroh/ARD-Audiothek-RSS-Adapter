@@ -1,0 +1,15 @@
+# Build artifacts
+/target
+
+# VCS metadata
+/.git
+/.gitignore
+
+# IDE files
+/.idea
+/.vscode
+*.iml
+
+# Local tooling
+/.mvn
+/.DS_Store
