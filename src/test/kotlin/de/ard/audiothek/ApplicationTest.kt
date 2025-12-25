@@ -38,6 +38,17 @@ class ApplicationTest {
     }
 
     @Test
+    fun `health endpoint responds with OK`() = testApplication {
+        application {
+            module()
+        }
+
+        val response = client.get("/health")
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("ARD Audiothek RSS Adapter is running.", response.bodyAsText())
+    }
+
+    @Test
     fun `rss feed endpoint returns cached syndication document`() = testApplication {
         environment {
             config = MapApplicationConfig()

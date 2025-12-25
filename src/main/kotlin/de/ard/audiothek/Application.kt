@@ -74,10 +74,10 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
     if (pluginOrNull(StatusPages) == null) {
         install(StatusPages) {
             exception<ShowRetrievalException> { call, cause ->
-                call.respond(HttpStatusCode.BadGateway, cause.message ?: "Unable to fetch show page.")
+                call.respond(HttpStatusCode.BadGateway, cause.message!!)
             }
             exception<ShowParsingException> { call, cause ->
-                call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Failed to parse ARD Audiothek data.")
+                call.respond(HttpStatusCode.InternalServerError, cause.message!!)
             }
             exception<Throwable> { call, cause ->
                 appLogger.error("Unhandled error while rendering RSS feed", cause)
@@ -104,11 +104,11 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
                 }
                 call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
             } catch (ex: ShowRetrievalException) {
-                call.respondRssError(HttpStatusCode.BadGateway, ex.message ?: "Unable to fetch show page.")
+                call.respondRssError(HttpStatusCode.BadGateway, ex.message!!)
             } catch (ex: ShowParsingException) {
                 call.respondRssError(
                     HttpStatusCode.InternalServerError,
-                    ex.message ?: "Failed to parse ARD Audiothek data."
+                    ex.message!!
                 )
             } catch (ex: Throwable) {
                 appLogger.error("Unhandled error while rendering RSS feed for $feedId", ex)
