@@ -95,14 +95,23 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
         get("/health") {
             call.respondText("ARD Audiothek RSS Adapter is running.")
         }
-        get("/rss/feed/{feedId}") {
-            val feedId = call.parameters.getOrFail("feedId")
+        get("/rss/feed/{feedUrl...}") {
+            val rawFeedUrl = call.parameters.getOrFail("feedUrl")
+            val feedUrl = try {
+                FeedUrlValidator.normalize(rawFeedUrl)
+            } catch (ex: InvalidFeedUrlException) {
+                call.respondRssError(HttpStatusCode.BadRequest, ex.message!!)
+                return@get
+            }
+
             try {
-                val rss = rssCache.getOrPut(feedId) {
-                    val show = showClient.fetchShow(feedId)
+                val rss = rssCache.getOrPut(feedUrl) {
+                    val show = showClient.fetchShow(feedUrl)
                     rssBuilder.build(show)
                 }
                 call.respondText(rss, ContentType.Application.Xml.withCharset(Charsets.UTF_8))
+            } catch (ex: InvalidFeedUrlException) {
+                call.respondRssError(HttpStatusCode.BadRequest, ex.message!!)
             } catch (ex: ShowRetrievalException) {
                 call.respondRssError(HttpStatusCode.BadGateway, ex.message!!)
             } catch (ex: ShowParsingException) {
@@ -111,7 +120,7 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
                     ex.message!!
                 )
             } catch (ex: Throwable) {
-                appLogger.error("Unhandled error while rendering RSS feed for $feedId", ex)
+                appLogger.error("Unhandled error while rendering RSS feed for $feedUrl", ex)
                 call.respondRssError(HttpStatusCode.InternalServerError, "Unexpected server error.")
             }
         }

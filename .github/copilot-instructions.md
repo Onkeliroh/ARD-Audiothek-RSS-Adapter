@@ -1,13 +1,13 @@
 # Copilot Instructions
 
 ## Big Picture Architecture
-- This service is a small Ktor server (see `src/main/kotlin/de/ard/audiothek/Application.kt`) exposing `GET /rss/feed/{feedId}` plus a health root.
+- This service is a small Ktor server (see `src/main/kotlin/de/ard/audiothek/Application.kt`) exposing `GET /rss/feed/{feedUrl...}` plus a health root.
 - Request flow: HTTP route → `ShowPageClient.fetchShow()` scrapes the public ARD Audiothek web page → `ArdShowPageParser.parse()` decodes the `__NEXT_DATA__` payload into `ShowDetails`/`EpisodeDetails` → `RssFeedBuilder.build()` turns that into an RSS 2.0 document.
 - All episodes and shows use the lightweight domain layer in `src/main/kotlin/de/ard/audiothek/ard/ShowModels.kt`; treat these as immutable DTOs when passing between components.
 - Rome (`com.rometools:rome`) handles RSS serialization, so prefer building `SyndFeedImpl`/`SyndEntryImpl` objects instead of manual XML.
 
 ## Key Conventions & Integration Points
-- HTTP fetching lives exclusively in `ShowPageClient`; it normalizes feed IDs that arrive as URNs (e.g. `urn:ard:show:...`), canonical paths (`/sendung/foo`), or full URLs. Reuse `resolvePageUrl()` instead of duplicating URL math.
+- HTTP fetching lives exclusively in `ShowPageClient`; it expects callers to pass the exact Audiothek show URL (http/https) and simply streams/parse that response.
 - Parsing relies on Jsoup + Jackson. `ArdShowPageParser` expects a `script#__NEXT_DATA__` element and throws `ShowParsingException` when structure changes; bubble that up to Ktor `StatusPages` so callers get a 500 instead of silent fallbacks.
 - Images often contain `{width}` placeholders; the parser already rewrites them to `512`. Follow that pattern if you add more media variants.
 - RSS descriptions are HTML fragments built inside `RssFeedBuilder`. Keep markup simple and sanitized—currently limited to paragraph tags, optional `<img>`, and a duration block.

@@ -16,16 +16,16 @@ fun HTML.feedMapperPage() {
         main {
             h1 { +"ARD Audiothek RSS Mapper" }
             p {
-                +"Paste any Audiothek show link, canonical path, or URN to get the matching RSS feed exposed by this service."
+                +"Paste the exact Audiothek show URL (including https://) to get the matching RSS feed exposed by this service."
             }
             label {
                 attributes["for"] = "audiothek-input"
-                +"Audiothek Link or URN"
+                +"Audiothek Show URL"
             }
             div(classes = "form-row") {
                 input(InputType.text) {
                     id = "audiothek-input"
-                    placeholder = "Example: urn:ard:show:de76181e5527c837"
+                    placeholder = "Example: https://www.ardaudiothek.de/sendung/..."
                     attributes["autocomplete"] = "off"
                     attributes["spellcheck"] = "false"
                 }
@@ -52,18 +52,14 @@ fun HTML.feedMapperPage() {
             section(classes = "examples") {
                 label { +"Examples" }
                 button(type = ButtonType.button) {
-                    attributes["data-sample"] = "urn:ard:show:de76181e5527c837"
-                    +"URN"
-                }
-                button(type = ButtonType.button) {
                     attributes["data-sample"] =
                         "https://www.ardaudiothek.de/sendung/grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837/"
-                    +"Full URL"
+                    +"Show URL"
                 }
                 button(type = ButtonType.button) {
                     attributes["data-sample"] =
-                        "grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837"
-                    +"Path"
+                        "https://www.ardaudiothek.de/sendung/chefredakteur/urn:ard:show:b658904449239b07/"
+                    +"Alternate URL"
                 }
             }
         }
@@ -85,7 +81,7 @@ fun HTML.feedMapperPage() {
                         function renderResult() {
                             const rawValue = input.value.trim();
                             if (!rawValue) {
-                                status.textContent = "Please paste a valid Audiothek link or URN.";
+                                status.textContent = "Please paste a valid Audiothek show URL.";
                                 resultCard.classList.add("is-hidden");
                                 return;
                             }

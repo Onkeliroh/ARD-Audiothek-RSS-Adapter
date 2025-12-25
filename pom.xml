@@ -10,7 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>2.3.0</kotlin.version>
+        <kotlin.version>2.2.0</kotlin.version>
         <ktor.version>3.3.2</ktor.version>
         <jvm.target>22</jvm.target>
         <graalvm.native.plugin.version>0.11.3</graalvm.native.plugin.version>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.6</version>
+            <version>1.5.13</version>
         </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -250,14 +250,10 @@
                             <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
                             <imageName>${graalvm.native.image.name}</imageName>
                             <fallback>false</fallback>
-                            <resources>
-                                <resource>
-                                    <includes>
-                                        <include>application.conf</include>
-                                        <include>logback.xml</include>
-                                    </includes>
-                                </resource>
-                            </resources>
+                            <resourceIncludedPatterns>
+                                <resourceIncludedPattern>application.conf</resourceIncludedPattern>
+                                <resourceIncludedPattern>logback.xml</resourceIncludedPattern>
+                            </resourceIncludedPatterns>
                             <buildArgs>
                                 <buildArg>--install-exit-handlers</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>

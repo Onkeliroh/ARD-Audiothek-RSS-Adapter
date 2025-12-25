@@ -10,7 +10,7 @@ The tool is wirten in kotlin using the ktor framework and build with maven and g
 
 The tool offers the following API endpoints:
 
-1. GET `/rss/feed/{feedId}` - Returns a valid RSS feed document filled with items fetched from the ARD Audiothek for the given feedId. The feedId can be the ARD Audiothek URN identifier of productions (e.g. `urn:ard:show:ef3205b54d97da0e`), the canonical `/sendung/...` path, or a full page URL. The adapter scrapes the public show page, parses the embedded `__NEXT_DATA__` payload, and transforms every listed episode into an RSS item containing title, summary, publication timestamp, runtime, and the playable audio URL.
+1. GET `/rss/feed/{feedUrl...}` - Returns a valid RSS feed document filled with items fetched from the ARD Audiothek show page located at `feedUrl`. The value must be a fully-qualified `https://www.ardaudiothek.de/...` URL. Because the route captures the entire remainder of the path, you can pass the raw URL (`/rss/feed/https://www.ardaudiothek.de/sendung/foo/…/`) or provide the percent-encoded variant if preferred.
 
 The tool offerst the following configuration options via either environment variables or a configuration file located at `~/.ardara.conf`:
 
@@ -36,9 +36,9 @@ The server will start and listen on the configured port (default: `8411`).
 You can then access the RSS feed endpoint by navigating to:
 
 ```
-http://localhost:8411/rss/feed/{feedId}
+http://localhost:8411/rss/feed/https://www.ardaudiothek.de/sendung/<slug>/<urn>/
 ```
-Replace `{feedId}` with the desired ARD Audiothek URN identifier.
+Replace the trailing portion with the exact Audiothek show URL (URL-encode it if your tooling cannot send raw URLs inside the path).
 
 ## Coverage Report
 

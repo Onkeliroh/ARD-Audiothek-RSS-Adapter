@@ -20,12 +20,18 @@ import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.testApplication
 import java.io.StringReader
 import java.time.Duration
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.text.Charsets
 
 class ApplicationTest {
+    private val audiothekUrl =
+        "https://www.ardaudiothek.de/sendung/jagd-auf-fantomas-ard-hoerspiel-serie/urn:ard:show:ef3205b54d97da0e/"
+    private val encodedAudiothekUrl = encode(audiothekUrl)
+
     @Test
     fun `root responds with status text`() = testApplication {
         application {
@@ -86,14 +92,14 @@ class ApplicationTest {
             )
         }
 
-        val firstResponse = client.get("/rss/feed/urn:ard:show:ef3205b54d97da0e")
+        val firstResponse = client.get("/rss/feed/$encodedAudiothekUrl")
         val firstBody = firstResponse.bodyAsText()
         assertEquals(HttpStatusCode.OK, firstResponse.status, "body: $firstBody")
         val feed = SyndFeedInput().build(StringReader(firstBody))
         assertEquals("Jagd auf Fantomas | ARD Hörspiel-Serie", feed.title)
         assertEquals(12, feed.entries.size)
 
-        val secondResponse = client.get("/rss/feed/urn:ard:show:ef3205b54d97da0e")
+        val secondResponse = client.get("/rss/feed/$encodedAudiothekUrl")
         val secondBody = secondResponse.bodyAsText()
         assertEquals(HttpStatusCode.OK, secondResponse.status, "body: $secondBody")
         assertEquals(firstBody, secondBody)
@@ -129,7 +135,7 @@ class ApplicationTest {
             )
         }
 
-        val response = client.get("/rss/feed/problem")
+        val response = client.get("/rss/feed/${encode("https://example.org/problem-feed")}")
         assertEquals(HttpStatusCode.BadGateway, response.status)
         assertTrue(response.bodyAsText().contains("Failed to fetch show page"))
     }
@@ -164,8 +170,22 @@ class ApplicationTest {
             )
         }
 
-        val response = client.get("/rss/feed/trigger-parser-error")
+        val response = client.get("/rss/feed/${encode("https://example.org/parser-error")}")
         assertEquals(HttpStatusCode.InternalServerError, response.status)
         assertTrue(response.bodyAsText().contains("script tag is missing"))
     }
+
+    @Test
+    fun `rss feed returns 400 for invalid URLs`() = testApplication {
+        application {
+            module()
+        }
+
+        val response = client.get("/rss/feed/urn:ard:show:ef3205b54d97da0e")
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("Feed URL"))
+    }
 }
+
+private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
