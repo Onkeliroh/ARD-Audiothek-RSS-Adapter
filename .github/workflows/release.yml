@@ -210,8 +210,10 @@ jobs:
           shopt -s globstar nullglob
           found=false
           for file in release-assets/**/ard-audiothek-rss-adapter*; do
-            cp "$file" release-binaries/
-            found=true
+            if [ -f "$file" ]; then
+              cp "$file" release-binaries/
+              found=true
+            fi
           done
           if [ "$found" = false ]; then
             echo "No release binaries were found to publish" >&2
