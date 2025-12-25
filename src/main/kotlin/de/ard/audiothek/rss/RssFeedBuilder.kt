@@ -1,14 +1,10 @@
 package de.ard.audiothek.rss
 
-import com.rometools.rome.feed.synd.SyndContent
-import com.rometools.rome.feed.synd.SyndContentImpl
-import com.rometools.rome.feed.synd.SyndEntryImpl
-import com.rometools.rome.feed.synd.SyndFeedImpl
-import com.rometools.rome.feed.synd.SyndEnclosureImpl
+import com.rometools.rome.feed.synd.*
 import com.rometools.rome.io.SyndFeedOutput
 import de.ard.audiothek.ard.EpisodeDetails
 import de.ard.audiothek.ard.ShowDetails
-import java.util.Date
+import java.util.*
 
 class RssFeedBuilder {
     fun build(show: ShowDetails): String {
@@ -46,8 +42,10 @@ class RssFeedBuilder {
     private fun buildDescription(episode: EpisodeDetails): SyndContent = SyndContentImpl().apply {
         type = "text/html"
         value = buildString {
-            episode.imageUrl?.let { append('<').append('p').append('>').append("<img src=\"").append(it)
-                .append("\" alt=\"Episode cover\" loading=\"lazy\" />").append("</p>") }
+            episode.imageUrl?.let {
+                append('<').append('p').append('>').append("<img src=\"").append(it)
+                    .append("\" alt=\"Episode cover\" loading=\"lazy\" />").append("</p>")
+            }
             episode.summary?.let { append("<p>").append(it).append("</p>") }
             episode.durationSeconds?.let { duration ->
                 append("<p><strong>Spielzeit:</strong> ")

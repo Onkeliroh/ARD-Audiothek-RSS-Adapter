@@ -10,10 +10,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>2.0.21</kotlin.version>
-        <ktor.version>2.3.7</ktor.version>
+        <kotlin.version>2.3.0</kotlin.version>
+        <ktor.version>3.3.2</ktor.version>
         <jvm.target>22</jvm.target>
-        <graalvm.native.plugin.version>0.10.2</graalvm.native.plugin.version>
+        <graalvm.native.plugin.version>0.11.3</graalvm.native.plugin.version>
         <graalvm.native.image.name>${project.artifactId}</graalvm.native.image.name>
         <slf4j.version>2.0.13</slf4j.version>
     </properties>
@@ -103,7 +103,7 @@
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-server-tests-jvm</artifactId>
+            <artifactId>ktor-server-test-host-jvm</artifactId>
             <version>${ktor.version}</version>
             <scope>test</scope>
         </dependency>

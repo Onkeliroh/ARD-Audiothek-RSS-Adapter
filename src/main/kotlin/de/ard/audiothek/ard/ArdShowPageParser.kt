@@ -30,10 +30,10 @@ class ArdShowPageParser(
         val path = resultNode.path("path").asText("")
         val imageUrl = extractImageUrl(resultNode.path("image"))
 
-            val episodesNode = resultNode.path("items")
-            val episodes = episodesNode.path("nodes")
-                .mapNotNull { node -> mapEpisode(node) }
-            val hasMore = episodesNode.path("pageInfo").path("hasNextPage").asBoolean(false)
+        val episodesNode = resultNode.path("items")
+        val episodes = episodesNode.path("nodes")
+            .mapNotNull { node -> mapEpisode(node) }
+        val hasMore = episodesNode.path("pageInfo").path("hasNextPage").asBoolean(false)
 
         return ShowDetails(
             id = resultNode.path("coreId").asText(resultNode.path("id").asText("")),
@@ -82,14 +82,14 @@ class ArdShowPageParser(
         val script = document.selectFirst("script#__NEXT_DATA__")
             ?: throw ShowParsingException("__NEXT_DATA__ script tag is missing from the ARD Audiothek page")
         val payload = script.data()
-            if (payload.isNullOrBlank()) {
-                throw ShowParsingException("__NEXT_DATA__ payload is empty")
-            }
-            return try {
-                objectMapper.readTree(payload)
-            } catch (ex: Exception) {
-                throw ShowParsingException("__NEXT_DATA__ payload could not be parsed: ${ex.message}")
-            }
+        if (payload.isNullOrBlank()) {
+            throw ShowParsingException("__NEXT_DATA__ payload is empty")
+        }
+        return try {
+            objectMapper.readTree(payload)
+        } catch (ex: Exception) {
+            throw ShowParsingException("__NEXT_DATA__ payload could not be parsed: ${ex.message}")
+        }
     }
 
     private fun parseInstant(raw: String): Instant? = try {

@@ -1,27 +1,6 @@
 package de.ard.audiothek.ui
 
-import kotlinx.html.ButtonType
-import kotlinx.html.HEAD
-import kotlinx.html.HTML
-import kotlinx.html.InputType
-import kotlinx.html.a
-import kotlinx.html.body
-import kotlinx.html.button
-import kotlinx.html.div
-import kotlinx.html.head
-import kotlinx.html.h1
-import kotlinx.html.id
-import kotlinx.html.input
-import kotlinx.html.label
-import kotlinx.html.main
-import kotlinx.html.meta
-import kotlinx.html.p
-import kotlinx.html.script
-import kotlinx.html.section
-import kotlinx.html.span
-import kotlinx.html.style
-import kotlinx.html.title
-import kotlinx.html.unsafe
+import kotlinx.html.*
 
 fun HTML.feedMapperPage() {
     head {
@@ -77,11 +56,13 @@ fun HTML.feedMapperPage() {
                     +"URN"
                 }
                 button(type = ButtonType.button) {
-                    attributes["data-sample"] = "https://www.ardaudiothek.de/sendung/grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837/"
+                    attributes["data-sample"] =
+                        "https://www.ardaudiothek.de/sendung/grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837/"
                     +"Full URL"
                 }
                 button(type = ButtonType.button) {
-                    attributes["data-sample"] = "grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837"
+                    attributes["data-sample"] =
+                        "grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837"
                     +"Path"
                 }
             }

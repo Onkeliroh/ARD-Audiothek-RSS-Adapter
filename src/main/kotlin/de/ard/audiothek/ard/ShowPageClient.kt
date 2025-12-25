@@ -1,16 +1,10 @@
 package de.ard.audiothek.ard
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.isSuccess
-import io.ktor.http.withCharset
-import kotlin.text.Charsets
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 
 class ShowPageClient(
     private val httpClient: HttpClient,
@@ -31,7 +25,11 @@ class ShowPageClient(
     private fun resolvePageUrl(feedId: String): String {
         val normalizedBase = pageBaseUrl.trimEnd('/')
         return when {
-            feedId.startsWith("http://", ignoreCase = true) || feedId.startsWith("https://", ignoreCase = true) -> feedId
+            feedId.startsWith("http://", ignoreCase = true) || feedId.startsWith(
+                "https://",
+                ignoreCase = true
+            ) -> feedId
+
             feedId.startsWith("/") -> normalizedBase + feedId
             feedId.startsWith("urn:") -> buildString {
                 append(normalizedBase)
@@ -39,6 +37,7 @@ class ShowPageClient(
                 append(feedId.trimEnd('/'))
                 append('/')
             }
+
             else -> buildString {
                 append(normalizedBase)
                 append("/sendung/")
@@ -51,7 +50,13 @@ class ShowPageClient(
     private suspend fun ensureSuccess(response: HttpResponse, url: String) {
         if (!response.status.isSuccess()) {
             val body = runCatching { response.body<String>() }.getOrNull()
-            throw ShowRetrievalException("Failed to fetch show page $url : ${response.status.value} ${response.status.description}. Body: ${body?.take(256)}")
+            throw ShowRetrievalException(
+                "Failed to fetch show page $url : ${response.status.value} ${response.status.description}. Body: ${
+                    body?.take(
+                        256
+                    )
+                }"
+            )
         }
     }
 }

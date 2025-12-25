@@ -1,6 +1,7 @@
 package de.ard.audiothek
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.typesafe.config.ConfigFactory
 import de.ard.audiothek.ard.ArdShowPageParser
 import de.ard.audiothek.ard.ShowPageClient
 import de.ard.audiothek.ard.ShowParsingException
@@ -9,58 +10,47 @@ import de.ard.audiothek.rss.RssFeedBuilder
 import de.ard.audiothek.rss.RssFeedCache
 import de.ard.audiothek.ui.errorPage
 import de.ard.audiothek.ui.feedMapperPage
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.cio.CIO
-import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.withCharset
-import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.ApplicationStarted
-import io.ktor.server.application.ApplicationStopped
-import io.ktor.server.application.call
-import io.ktor.server.application.install
-import io.ktor.server.application.pluginOrNull
-import io.ktor.server.html.respondHtml
-import com.typesafe.config.ConfigFactory
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.plugins.statuspages.exception
-import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
-import io.ktor.server.util.getOrFail
-import io.ktor.server.config.ApplicationConfig
-import io.ktor.server.config.HoconApplicationConfig
-import io.ktor.server.engine.applicationEngineEnvironment
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.engine.connector
-import io.ktor.server.netty.Netty
+import io.ktor.client.*
+import io.ktor.client.engine.*
+import io.ktor.client.engine.cio.*
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.config.*
+import io.ktor.server.engine.*
+import io.ktor.server.html.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.util.*
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import kotlin.text.Charsets
 
 fun main() {
     val config = HoconApplicationConfig(ConfigFactory.load())
     val host = config.propertyOrNull("ktor.deployment.host")?.getString() ?: "0.0.0.0"
     val port = resolvePort(config)
-    val environment = applicationEngineEnvironment {
+    val environment = applicationEnvironment {
         this.config = config
         log = LoggerFactory.getLogger("Application")
-        module {
-            module()
-        }
-        connector {
-            this.host = host
-            this.port = port
-        }
     }
     val displayHost = if (host == "0.0.0.0") "localhost" else host
-    environment.monitor.subscribe(ApplicationStarted) {
-        environment.log.info("Server ready: http://$displayHost:$port/")
+    val server = embeddedServer(
+        Netty,
+        serverConfig(environment) {
+            module(Application::module)
+        },
+        configure = {
+            connector {
+                this.host = host
+                this.port = port
+            }
+        }
+    )
+    server.application.monitor.subscribe(ApplicationStarted) {
+        server.environment.log.info("Server ready: http://$displayHost:$port/")
     }
-    embeddedServer(Netty, environment).start(wait = true)
+    server.start(wait = true)
 }
 
 private fun resolvePort(config: ApplicationConfig): Int {
@@ -79,7 +69,7 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
     val rssCache = dependencies.rssCache
     val appLogger = this.environment.log
 
-    environment.monitor.subscribe(ApplicationStopped) { httpClient.close() }
+    monitor.subscribe(ApplicationStopped) { httpClient.close() }
 
     if (pluginOrNull(StatusPages) == null) {
         install(StatusPages) {
@@ -116,7 +106,10 @@ fun Application.module(dependencies: ModuleDependencies = ModuleDependencies.cre
             } catch (ex: ShowRetrievalException) {
                 call.respondRssError(HttpStatusCode.BadGateway, ex.message ?: "Unable to fetch show page.")
             } catch (ex: ShowParsingException) {
-                call.respondRssError(HttpStatusCode.InternalServerError, ex.message ?: "Failed to parse ARD Audiothek data.")
+                call.respondRssError(
+                    HttpStatusCode.InternalServerError,
+                    ex.message ?: "Failed to parse ARD Audiothek data."
+                )
             } catch (ex: Throwable) {
                 appLogger.error("Unhandled error while rendering RSS feed for $feedId", ex)
                 call.respondRssError(HttpStatusCode.InternalServerError, "Unexpected server error.")
