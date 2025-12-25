@@ -23,4 +23,4 @@ USER app
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8411/health >/dev/null || exit 1
 
-ENTRYPOINT ["/bin/sh", "-c", "exec ${APP_HOME}/app -Dconfig.file=${APP_HOME}/application.conf $APP_OPTS"]
+ENTRYPOINT ["/bin/sh", "-c", "exec ${APP_HOME}/app $APP_OPTS"]
