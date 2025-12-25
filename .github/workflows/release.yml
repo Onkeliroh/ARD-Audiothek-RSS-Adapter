@@ -13,11 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up GraalVM 22
+      - name: Set up GraalVM 21
         uses: actions/setup-java@v4
         with:
           distribution: graalvm
-          java-version: 22
+          java-version: 21
           cache: maven
 
       - name: Run JVM verify
@@ -66,11 +66,11 @@ jobs:
           name: jvm-target
           path: .
 
-      - name: Set up GraalVM 22
+      - name: Set up GraalVM 21
         uses: actions/setup-java@v4
         with:
           distribution: graalvm
-          java-version: 22
+          java-version: 21
           cache: maven
 
       - name: Run native tests
