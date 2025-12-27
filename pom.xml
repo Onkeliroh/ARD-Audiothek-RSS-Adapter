@@ -250,10 +250,6 @@
                             <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
                             <imageName>${graalvm.native.image.name}</imageName>
                             <fallback>false</fallback>
-                            <resourceIncludedPatterns>
-                                <resourceIncludedPattern>application.conf</resourceIncludedPattern>
-                                <resourceIncludedPattern>logback.xml</resourceIncludedPattern>
-                            </resourceIncludedPatterns>
                             <buildArgs>
                                 <buildArg>--install-exit-handlers</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
