@@ -15,7 +15,6 @@
         <jvm.target>21</jvm.target>
         <slf4j.version>2.0.13</slf4j.version>
         <jib.maven.plugin.version>3.4.3</jib.maven.plugin.version>
-        <jib.to.image>ghcr.io/ard-audiothek/ard-audiothek-rss-adapter:dev</jib.to.image>
     </properties>
 
     <repositories>
@@ -263,9 +262,13 @@
                     <from>
                         <image>eclipse-temurin:21-jre</image>
                     </from>
-                    <to>
-                        <image>${jib.to.image}</image>
-                    </to>
+					<to>
+						<!-- Default local image name, override with -Djib.to.image in CI/CD -->
+						<image>onkeliroh/aara:${project.version}</image>
+						<tags>
+							<tag>latest</tag>
+						</tags>
+					</to>
                     <container>
                         <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
                         <ports>

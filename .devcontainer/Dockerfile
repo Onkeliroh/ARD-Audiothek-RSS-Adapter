@@ -11,10 +11,14 @@ RUN apt-get update \
         git \
         maven \
         openjdk-21-jdk \
+        docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH=${JAVA_HOME}/bin:${PATH}
 
-# Maven local cache directory with open permissions for the vscode user.
-RUN mkdir -p /home/vscode/.m2 && chown -R vscode:vscode /home/vscode/.m2
+# Allow the vscode user to talk to the host Docker daemon and prep Maven cache.
+RUN groupadd -f docker \
+    && usermod -aG docker vscode \
+    && mkdir -p /home/vscode/.m2 \
+    && chown -R vscode:vscode /home/vscode/.m2

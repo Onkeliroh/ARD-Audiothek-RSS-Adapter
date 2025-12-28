@@ -4,7 +4,11 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "runArgs": ["--init"],
+  "runArgs": [
+    "--init",
+    "-v",
+    "/var/run/docker.sock:/var/run/docker.sock"
+  ],
   "forwardPorts": [8411],
   "portsAttributes": {
     "8411": {
