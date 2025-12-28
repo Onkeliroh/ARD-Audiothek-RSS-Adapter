@@ -23,8 +23,8 @@
       "settings": {
         "java.configuration.runtimes": [
           {
-            "name": "GraalVM",
-            "path": "/opt/graalvm-community-jdk-22.0.2",
+            "name": "JDK 21",
+            "path": "/usr/lib/jvm/java-21-openjdk-amd64",
             "default": true
           }
         ],

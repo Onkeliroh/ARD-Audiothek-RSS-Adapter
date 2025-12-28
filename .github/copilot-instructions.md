@@ -15,8 +15,8 @@
 
 ## Build, Run, Test
 - Standard workflow: `mvn clean verify` for full compile + JUnit 5 suites (`ApplicationTest`, `ArdShowPageParserTest`). These tests spin up an in-memory Ktor app and parse the real-world HTML at `src/test/resources/Jagd auf Fantomas.html`.
-- Local dev run: `mvn exec:java -Dexec.mainClass=de.ard.audiothek.ApplicationKt` or `java -jar target/ard-audiothek-rss-adapter-1.0-SNAPSHOT.jar` after packaging.
-- Native image: `mvn -Pnative -DskipTests package` generates `target/native/ard-audiothek-rss-adapter`. Ensure your machine provides GraalVM + matching architecture before invoking the profile.
+- Local dev run: `mvn exec:java -Dexec.mainClass=de.ard.audiothek.ApplicationKt` or `java -jar target/ard-audiothek-rss-adapter.jar` after packaging.
+- Container image: `mvn -Djib.to.image=ghcr.io/ard-audiothek/ard-audiothek-rss-adapter:dev jib:build` builds an OCI image without Docker.
 
 ## When Extending Functionality
 - Reuse the shared `HttpClient` defined in `Application.module()`; remember to close new resources via `ApplicationStopped` hooks.

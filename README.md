@@ -4,9 +4,9 @@ This project allows the use/client to access rss feeds that connect to the ARD A
 
 ## Setup
 
-- ktor, kotlin, maven, graalvm
+- ktor, kotlin, maven
 
-The tool is wirten in kotlin using the ktor framework and build with maven and graalvm for native image support.
+The tool is written in Kotlin using the Ktor framework and built with Maven.
 
 The tool offers the following API endpoints:
 
@@ -21,7 +21,7 @@ The tool offerst the following configuration options via either environment vari
 
 ## Building and Running
 
-To build the project, ensure you have Maven and GraalVM installed. Then run:
+To build the project, ensure you have Maven installed. Then run:
 
 ```bash
 mvn clean package
@@ -29,7 +29,7 @@ mvn clean package
 To run the application, execute the following command:
 
 ```bash
-java -jar target/ard-audiothek-rss-adapter-1.0-SNAPSHOT.jar
+java -jar target/ard-audiothek-rss-adapter.jar
 ```
 
 The server will start and listen on the configured port (default: `8411`).
@@ -48,13 +48,13 @@ To generate a code coverage report, run the following Maven command:
 mvn clean verify jacoco:report
 ```
 
-### Native Build (GraalVM)
+## Container Image
 
-To produce a Linux x86_64 native executable, install GraalVM and run:
+Use the Jib plugin to build and push an OCI image without a local Docker daemon:
 
+```bash
+mvn -Djib.to.image=ghcr.io/your-org/ard-audiothek-rss-adapter:dev jib:build
 ```
-mvn -Pnative -DskipTests package
-```
 
-The resulting binary is written to `target/native/ard-audiothek-rss-adapter`. Ensure your build machine matches the target architecture (Intel/AMD 64-bit Linux) when invoking the native profile.
+You can add extra tags with `-Djib.to.tags=latest` or supply credentials via the `JIB_TO_AUTH_USERNAME`/`JIB_TO_AUTH_PASSWORD` environment variables when publishing.
 

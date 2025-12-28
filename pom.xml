@@ -13,9 +13,9 @@
         <kotlin.version>2.2.0</kotlin.version>
         <ktor.version>3.3.2</ktor.version>
         <jvm.target>21</jvm.target>
-        <graalvm.native.plugin.version>0.11.3</graalvm.native.plugin.version>
-        <graalvm.native.image.name>${project.artifactId}</graalvm.native.image.name>
         <slf4j.version>2.0.13</slf4j.version>
+        <jib.maven.plugin.version>3.4.3</jib.maven.plugin.version>
+        <jib.to.image>ghcr.io/ard-audiothek/ard-audiothek-rss-adapter:dev</jib.to.image>
     </properties>
 
     <repositories>
@@ -134,6 +134,7 @@
     </dependencies>
 
     <build>
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -233,51 +234,51 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>${jib.maven.plugin.version}</version>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:21-jre</image>
+                    </from>
+                    <to>
+                        <image>${jib.to.image}</image>
+                    </to>
+                    <container>
+                        <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
+                        <ports>
+                            <port>8411</port>
+                        </ports>
+                        <jvmFlags>
+                            <jvmFlag>-Xms256m</jvmFlag>
+                            <jvmFlag>-Xmx512m</jvmFlag>
+                            <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
+                        </jvmFlags>
+                    </container>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>native</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.graalvm.buildtools</groupId>
-                        <artifactId>native-maven-plugin</artifactId>
-                        <version>${graalvm.native.plugin.version}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <mainClass>de.ard.audiothek.ApplicationKt</mainClass>
-                            <imageName>${graalvm.native.image.name}</imageName>
-                            <fallback>false</fallback>
-                            <buildArgs>
-                                <buildArg>--install-exit-handlers</buildArg>
-                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
-                                <buildArg>-H:MissingRegistrationReportingMode=Warn</buildArg>
-                            </buildArgs>
-                            <agent>
-                                <enabled>true</enabled>
-                            </agent>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>build-native</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>compile-no-fork</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>test-native</id>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                                <phase>test</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

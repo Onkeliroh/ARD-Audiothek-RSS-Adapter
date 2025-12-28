@@ -6,142 +6,11 @@ on:
       - 'v*'
 
 jobs:
-  base-build:
-    name: Base build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up GraalVM 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: graalvm
-          java-version: 21
-          cache: maven
-
-      - name: Run JVM verify
-        run: mvn -B verify
-
-      - name: Upload target directory
-        uses: actions/upload-artifact@v4
-        with:
-          name: jvm-target
-          path: target
-          if-no-files-found: error
-
-      - name: Upload JaCoCo report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco
-          if-no-files-found: warn
-
-  native-builds:
-    name: Build ${{ matrix.display_name }} native
-    needs: base-build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            display_name: Linux x64
-            suffix: linux-x64
-            binary_path: target/ard-audiothek-rss-adapter
-            artifact_name: ard-audiothek-rss-adapter
-          - os: windows-latest
-            display_name: Windows x64
-            suffix: windows-x64
-            binary_path: target/ard-audiothek-rss-adapter.exe
-            artifact_name: ard-audiothek-rss-adapter.exe
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Restore JVM outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: jvm-target
-          path: .
-
-      - name: Set up GraalVM 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: graalvm
-          java-version: 21
-          cache: maven
-
-      - name: Run native tests
-        run: mvn -B -Pnative test
-
-      - name: Build native image
-        run: mvn -B -Pnative -DskipTests package
-
-      - name: Set project version (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "PROJECT_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Set project version (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $version = "$env:GITHUB_REF_NAME"
-          if ($version.StartsWith('v')) {
-            $version = $version.Substring(1)
-          }
-          Add-Content -Path $env:GITHUB_ENV -Value "PROJECT_VERSION=$version"
-
-      - name: Stage native artifact (Linux)
-        if: runner.os != 'Windows'
-        run: |
-          set -euo pipefail
-          BINARY="${{ matrix.binary_path }}"
-          if [ ! -f "$BINARY" ]; then
-            echo "Native binary not found at $BINARY" >&2
-            exit 1
-          fi
-          OUTPUT="ard-audiothek-rss-adapter-${PROJECT_VERSION}-${{ matrix.suffix }}"
-          cp "$BINARY" "$OUTPUT"
-          chmod +x "$OUTPUT"
-          echo "PACKAGE_NAME=$OUTPUT" >> "$GITHUB_ENV"
-
-      - name: Stage native artifact (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $binary = "${{ matrix.binary_path }}"
-          if (-not (Test-Path $binary)) {
-            throw "Native binary not found at $binary"
-          }
-          $output = "ard-audiothek-rss-adapter-$env:PROJECT_VERSION-${{ matrix.suffix }}"
-          Copy-Item -Path $binary -Destination $output -Force
-          Add-Content -Path $env:GITHUB_ENV -Value "PACKAGE_NAME=$output"
-
-      - name: Upload native artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.suffix }}
-          path: ${{ env.PACKAGE_NAME }}
-          if-no-files-found: error
-
-      - name: Share Linux binary for Docker
-        if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-native-binary
-          path: ${{ matrix.binary_path }}
-          if-no-files-found: error
-
-  docker-image:
-    name: Publish Docker image
-    needs: native-builds
+  release:
+    name: Release artifacts
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     env:
       REGISTRY: ghcr.io
@@ -149,80 +18,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore native binary
-        uses: actions/download-artifact@v4
+      - name: Set up Temurin JDK 21
+        uses: actions/setup-java@v4
         with:
-          name: linux-native-binary
-          path: target
+          distribution: temurin
+          java-version: 21
+          cache: maven
 
-      - name: Determine image coordinates
+      - name: Run tests
+        run: mvn -B clean test
+
+      - name: Check code coverage
+        run: mvn -B -DskipTests jacoco:report jacoco:check
+
+      - name: Package fat jar
+        run: mvn -B -DskipTests package
+
+      - name: Determine release metadata
         run: |
-          IMAGE_NAME="${GITHUB_REPOSITORY,,}"
           VERSION="${GITHUB_REF_NAME#v}"
+          IMAGE_NAME="${GITHUB_REPOSITORY,,}"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ env.VERSION }}
-            type=raw,value=latest
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  publish:
-    name: Publish release
-    needs:
-      - native-builds
-      - docker-image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download packaged artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release-assets
-
-      - name: Keep only distributable binaries
+      - name: Stage fat jar for release
         run: |
-          set -euo pipefail
-          mkdir -p release-binaries
-          shopt -s globstar nullglob
-          found=false
-          for file in release-assets/**/ard-audiothek-rss-adapter*; do
-            if [ -f "$file" ]; then
-              cp "$file" release-binaries/
-              found=true
-            fi
-          done
-          if [ "$found" = false ]; then
-            echo "No release binaries were found to publish" >&2
-            exit 1
-          fi
-          rm -rf release-assets
-          mv release-binaries release-assets
+          mkdir -p release-assets
+          cp target/ard-audiothek-rss-adapter.jar "release-assets/ard-audiothek-rss-adapter-${RELEASE_VERSION}.jar"
 
-      - name: Create GitHub release
+      - name: Build and push Docker image
+        run: mvn -B -Djib.to.image=${REGISTRY}/${IMAGE_NAME}:${RELEASE_VERSION} -Djib.to.tags=latest jib:build
+        env:
+          JIB_TO_AUTH_USERNAME: ${{ github.actor }}
+          JIB_TO_AUTH_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           files: release-assets/**/*
