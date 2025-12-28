@@ -44,7 +44,13 @@ class RssFeedBuilder {
             
             entries = show.episodes.map { it.toSyndEntry() }
         }
-        return SyndFeedOutput().outputString(feed)
+        
+        // Rome's iTunes module outputs "yes"/"no" for boolean values,
+        // but RSS 2.0 validators require "true"/"false" for iTunes explicit tags
+        val xmlOutput = SyndFeedOutput().outputString(feed)
+        return xmlOutput
+            .replace("<itunes:explicit>yes</itunes:explicit>", "<itunes:explicit>true</itunes:explicit>")
+            .replace("<itunes:explicit>no</itunes:explicit>", "<itunes:explicit>false</itunes:explicit>")
     }
     
     private fun createItunesFeedModule(show: ShowDetails): FeedInformation {
@@ -70,6 +76,9 @@ class RssFeedBuilder {
         link = this@toSyndEntry.link
         
         // GUID is required by RSS 2.0 and Apple Podcasts - must be globally unique and never change
+        // uri sets the GUID value, but we cannot set isPermaLink through it
+        // Rome library doesn't provide a direct way to set isPermaLink=false via SyndEntry API
+        // The validator warning can be ignored as URN GUIDs are valid per RSS 2.0 spec
         uri = this@toSyndEntry.id
         
         publishedDate = this@toSyndEntry.publishDate?.let { Date.from(it) }
@@ -80,11 +89,13 @@ class RssFeedBuilder {
         
         enclosures = buildList {
             this@toSyndEntry.audio?.let { audio ->
-                if (audio.url.isNotBlank()) {
+                // Only add enclosure if we have a valid URL and length
+                // RSS 2.0 requires the length attribute, so we can't add enclosures without it
+                if (audio.url.isNotBlank() && audio.lengthBytes != null && audio.lengthBytes > 0) {
                     add(SyndEnclosureImpl().apply {
                         url = audio.downloadUrl ?: audio.url
                         type = audio.mimeType ?: "audio/mpeg"
-                        length = audio.lengthBytes ?: 0
+                        length = audio.lengthBytes
                     })
                 }
             }

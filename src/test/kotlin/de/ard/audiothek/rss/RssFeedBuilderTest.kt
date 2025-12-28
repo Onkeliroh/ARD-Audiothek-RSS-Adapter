@@ -73,6 +73,13 @@ class RssFeedBuilderTest {
         // Verify iTunes namespace and elements are present in XML
         assertTrue(xml.contains("xmlns:itunes"))
         assertTrue(xml.contains("itunes:"))
+        
+        // Verify explicit tag uses "false" not "no" for RSS 2.0 compliance
+        assertTrue(xml.contains("<itunes:explicit>false</itunes:explicit>"), 
+            "iTunes explicit tag should use 'false' not 'no' for RSS 2.0 compliance")
+        assertTrue(!xml.contains("<itunes:explicit>no</itunes:explicit>"),
+            "iTunes explicit tag should not contain 'no', must use 'false'")
+        
         assertEquals(2, feed.entries.size)
 
         val firstEntry = feed.entries.first()
@@ -137,11 +144,9 @@ class RssFeedBuilderTest {
         assertNull(feed.publishedDate)
         assertEquals(2, feed.entries.size)
 
+        // First entry has no length, so no enclosure should be added (RSS 2.0 requires length attribute)
         val firstEntry = feed.entries.first()
-        val firstEnclosure = firstEntry.enclosures.single()
-        assertEquals("https://cdn.example.com/stream2.mp3", firstEnclosure.url)
-        assertEquals("audio/aac", firstEnclosure.type)
-        assertEquals(0L, firstEnclosure.length)
+        assertTrue(firstEntry.enclosures.isEmpty(), "Episode without lengthBytes should not have enclosure")
         assertTrue(firstEntry.description.value.contains("2m 5s"))
 
         val secondEntry = feed.entries[1]
