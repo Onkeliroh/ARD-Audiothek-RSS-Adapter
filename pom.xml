@@ -275,8 +275,8 @@
                             <port>8411</port>
                         </ports>
                         <jvmFlags>
-                            <jvmFlag>-Xms256m</jvmFlag>
-                            <jvmFlag>-Xmx512m</jvmFlag>
+                            <jvmFlag>-Xms64m</jvmFlag>
+                            <jvmFlag>-Xmx256m</jvmFlag>
                             <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
                         </jvmFlags>
                     </container>
