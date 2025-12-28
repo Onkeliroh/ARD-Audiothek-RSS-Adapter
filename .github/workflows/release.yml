@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/${{ github.event.repository.name }}
+
 jobs:
   release:
     name: Release artifacts
@@ -31,26 +35,18 @@ jobs:
       - name: Check code coverage
         run: mvn -B -DskipTests jacoco:report jacoco:check
 
-      - name: Package fat jar
-        run: mvn -B -DskipTests package
-
       - name: Determine release metadata
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          IMAGE_NAME="${GITHUB_REPOSITORY,,}"
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
+        
+      - name: Package fat jar
+        run: mvn -B -DskipTests package
 
       - name: Stage fat jar for release
         run: |
           mkdir -p release-assets
           cp target/ard-audiothek-rss-adapter.jar "release-assets/ard-audiothek-rss-adapter-${RELEASE_VERSION}.jar"
-
-      - name: Build and push Docker image
-        run: mvn -B -Djib.to.image=${REGISTRY}/${IMAGE_NAME}:${RELEASE_VERSION} -Djib.to.tags=latest jib:build
-        env:
-          JIB_TO_AUTH_USERNAME: ${{ github.actor }}
-          JIB_TO_AUTH_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -59,3 +55,50 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata for tagging
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=auto
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          
+            # Extract the main image tag (first one from metadata)
+            MAIN_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1 | cut -d':' -f2)
+            
+            # Extract all additional tags
+            ADDITIONAL_TAGS=$(echo "${{ steps.meta.outputs.tags }}" | tail -n+2 | cut -d':' -f2 | tr '\n' ',' | sed 's/,$//')
+            
+            # Build command arguments
+            TAG_ARGS=""
+            if [ -n "$ADDITIONAL_TAGS" ]; then
+              TAG_ARGS="-Djib.to.tags=$ADDITIONAL_TAGS"
+            fi
+            
+            mvn package jib:build \
+              -DskipTests \
+              -Djib.to.image=${IMAGE_NAME_LOWER}:$MAIN_TAG \
+              $TAG_ARGS \
+              -Djib.to.auth.username=${{ github.actor }} \
+              -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
+              -B
+        
