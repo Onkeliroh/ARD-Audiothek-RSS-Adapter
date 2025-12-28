@@ -82,6 +82,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
           
+      - name: Build and push with Jib
+        run: |
+            # Convert image name to lowercase
+            IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr 'A-Z' 'a-z')
+
             # Extract the main image tag (first one from metadata)
             MAIN_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1 | cut -d':' -f2)
             
