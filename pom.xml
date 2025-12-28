@@ -275,9 +275,32 @@
                             <port>8411</port>
                         </ports>
                         <jvmFlags>
-                            <jvmFlag>-Xms64m</jvmFlag>
-                            <jvmFlag>-Xmx256m</jvmFlag>
+                            <!-- Memory settings: start small, grow if needed -->
+                            <jvmFlag>-Xms32m</jvmFlag>
+                            <jvmFlag>-Xmx128m</jvmFlag>
+                            
+                            <!-- Use serial GC for low-pause, low-overhead collection -->
+                            <jvmFlag>-XX:+UseSerialGC</jvmFlag>
+                            
+                            <!-- Reduce GC overhead and memory footprint -->
+                            <jvmFlag>-XX:MaxGCPauseMillis=100</jvmFlag>
+                            <jvmFlag>-XX:GCTimeRatio=19</jvmFlag>
+                            
+                            <!-- Shrink heap during idle periods -->
+                            <jvmFlag>-XX:MinHeapFreeRatio=20</jvmFlag>
+                            <jvmFlag>-XX:MaxHeapFreeRatio=40</jvmFlag>
+                            
+                            <!-- Reduce metaspace footprint -->
+                            <jvmFlag>-XX:MaxMetaspaceSize=128m</jvmFlag>
+                            
+                            <!-- Reduce thread stack size -->
+                            <jvmFlag>-Xss256k</jvmFlag>
+                            
+                            <!-- Exit cleanly on OOM -->
                             <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
+                            
+                            <!-- Reduce compiler threads for low activity -->
+                            <jvmFlag>-XX:CICompilerCount=2</jvmFlag>
                         </jvmFlags>
                     </container>
                 </configuration>
