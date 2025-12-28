@@ -64,40 +64,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract metadata for tagging
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            latest=auto
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-          
       - name: Build and push with Jib
         run: |
             # Convert image name to lowercase
             IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr 'A-Z' 'a-z')
 
-            # Extract the main image tag (first one from metadata)
-            MAIN_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1 | cut -d':' -f2)
+            # Use the release tag as the main image tag (e.g., v1.0.0 -> 1.0.0)
+            MAIN_TAG="${GITHUB_REF_NAME#v}"
             
-            # Extract all additional tags
-            ADDITIONAL_TAGS=$(echo "${{ steps.meta.outputs.tags }}" | tail -n+2 | cut -d':' -f2 | tr '\n' ',' | sed 's/,$//')
+            # Set additional tags (always include 'latest')
+            ADDITIONAL_TAGS="latest"
             
             # Build command arguments
-            TAG_ARGS=""
-            if [ -n "$ADDITIONAL_TAGS" ]; then
-              TAG_ARGS="-Djib.to.tags=$ADDITIONAL_TAGS"
-            fi
+            TAG_ARGS="-Djib.to.tags=$ADDITIONAL_TAGS"
             
             mvn package jib:build \
               -DskipTests \
