@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/${{ github.event.repository.name }}
+  IMAGE_NAME: ${{ github.repository_owner }}/aara
 
 jobs:
   release:
@@ -67,7 +67,7 @@ jobs:
       - name: Build and push with Jib
         run: |
             # Convert image name to lowercase
-            IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr 'A-Z' 'a-z')
+            IMAGE_NAME_LOWER=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
 
             # Use the release tag as the main image tag (e.g., v1.0.0 -> 1.0.0)
             MAIN_TAG="${GITHUB_REF_NAME#v}"
