@@ -32,3 +32,4 @@ hs_err_pid*
 # Go build artifacts
 /server
 coverage.out
+coverage.html

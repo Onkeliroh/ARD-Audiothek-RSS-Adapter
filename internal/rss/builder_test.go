@@ -51,7 +51,7 @@ func TestBuildProducesFullyPopulatedRSSFeed(t *testing.T) {
 				PublishDate:     &olderPublishDate,
 				DurationSeconds: nil,
 				Audio: &models.AudioAsset{
-					URL:         "",
+					URL:         "https://cdn.example.com/stream2.ogg",
 					MimeType:    "audio/ogg",
 					DownloadURL: "",
 					LengthBytes: nil,
