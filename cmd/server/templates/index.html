@@ -79,6 +79,11 @@
             flex-wrap: wrap;
         }
 
+        .title-text {
+            flex: 0 0 100%;
+            width: 100%;
+        }
+
         .lang-switch {
             display: inline-flex;
             align-items: center;
@@ -99,6 +104,10 @@
             border-radius: 999px;
             cursor: pointer;
             transition: background 140ms ease, color 140ms ease;
+        }
+
+        .lang-switch button+button {
+            margin-left: 0.4rem;
         }
 
         .lang-switch button.is-active {
@@ -282,7 +291,7 @@
 <body>
     <main>
         <header class="page-header">
-            <h1 id="title-text">ARD Audiothek RSS Mapper</h1>
+            <h1 id="title-text" class="title-text">ARD Audiothek RSS Mapper</h1>
             <div class="lang-switch" id="lang-switch" role="group" aria-label="Sprache wechseln">
                 <button type="button" class="is-active" data-lang="de" aria-pressed="true">DE</button>
                 <button type="button" data-lang="en" aria-pressed="false">EN</button>
@@ -340,8 +349,8 @@
                 de: {
                     title: "ARD Audiothek RSS Mapper",
                     heroLink: "Direkt zur ARD Audiothek ↗",
-                    heroLinkAria: "Oeffnet die ARD Audiothek in einem neuen Tab",
-                    description: "Fuege die exakte Audiothek-Show-URL (inklusive https://) ein, um den passenden RSS-Feed dieses Services zu erhalten.",
+                    heroLinkAria: "Öffnet die ARD Audiothek in einem neuen Tab",
+                    description: "Füge die exakte Audiothek-Show-URL (inklusive https://) ein, um den passenden RSS-Feed dieses Services zu erhalten.",
                     label: "Audiothek Show URL",
                     placeholder: "Beispiel: https://www.ardaudiothek.de/sendung/...",
                     mapButton: "Feed erzeugen",
@@ -350,15 +359,15 @@
                     resultLinkText: "Link kopieren",
                     langSwitchLabel: "Sprache wechseln",
                     examplesLabel: "Beispiele",
-                    examplePrimary: "Show-URL einsetzen",
-                    exampleSecondary: "Alternative URL",
+                    examplePrimary: "1. Beispiel",
+                    exampleSecondary: "2. Beispiel",
                     status: {
-                        idle: "Fuege einen Wert ein und druecke Enter zum Start.",
-                        invalid: "Bitte eine gueltige Audiothek-Show-URL einfuegen.",
-                        ready: "Link bereit. Klicke unten, um den RSS-Feed zu oeffnen.",
-                        copied: "Link kopiert – neues Tab geoeffnet.",
-                        copyFailed: "Konnte nicht kopieren – oeffne nur den Link.",
-                        clipboardMissing: "Zwischenspeicher nicht verfuegbar – oeffne Link."
+                        idle: "Füge einen Wert ein und drücke Enter zum Start.",
+                        invalid: "Bitte eine gültige Audiothek-Show-URL einfügen.",
+                        ready: "Link bereit. Klicke unten, um den RSS-Feed zu öffnen.",
+                        copied: "Link kopiert – neues Tab geöffnet.",
+                        copyFailed: "Konnte nicht kopieren – öffne nur den Link.",
+                        clipboardMissing: "Zwischenspeicher nicht verfügbar – öffne Link."
                     }
                 },
                 en: {
@@ -374,8 +383,8 @@
                     resultLinkText: "Copy link",
                     langSwitchLabel: "Change language",
                     examplesLabel: "Examples",
-                    examplePrimary: "Insert show URL",
-                    exampleSecondary: "Alternate URL",
+                    examplePrimary: "1. Example",
+                    exampleSecondary: "2. Example",
                     status: {
                         idle: "Paste a value and press enter to start.",
                         invalid: "Please paste a valid Audiothek show URL.",
