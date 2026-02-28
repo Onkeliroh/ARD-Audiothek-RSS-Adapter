@@ -149,7 +149,7 @@ func (s *server) respondError(w http.ResponseWriter, statusCode int, message str
 }
 
 func resolvePort() int {
-	if v := os.Getenv("PORT"); v != "" {
+	if v := os.Getenv("AARA_PORT"); v != "" {
 		if p, err := strconv.Atoi(v); err == nil && p > 0 {
 			return p
 		}
@@ -158,7 +158,7 @@ func resolvePort() int {
 }
 
 func resolveCacheTTL() time.Duration {
-	if v := os.Getenv("CACHE_TTL_SECONDS"); v != "" {
+	if v := os.Getenv("AARA_CACHE_TTL_SECONDS"); v != "" {
 		if s, err := strconv.ParseInt(v, 10, 64); err == nil && s > 0 {
 			return time.Duration(s) * time.Second
 		}
