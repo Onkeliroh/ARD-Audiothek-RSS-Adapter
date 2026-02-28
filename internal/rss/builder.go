@@ -116,11 +116,15 @@ func buildItem(ep *models.EpisodeDetails) rssItem {
 		if mimeType == "" {
 			mimeType = "audio/mpeg"
 		}
-		if audioURL != "" && ep.Audio.LengthBytes != nil && *ep.Audio.LengthBytes > 0 {
+		if audioURL != "" {
+			length := int64(0)
+			if ep.Audio.LengthBytes != nil {
+				length = *ep.Audio.LengthBytes
+			}
 			item.Enclosure = &rssEnclosure{
 				URL:    audioURL,
 				Type:   mimeType,
-				Length: *ep.Audio.LengthBytes,
+				Length: length,
 			}
 		}
 	}
