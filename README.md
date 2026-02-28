@@ -1,10 +1,12 @@
+![AARA Readme Header Panel](resources/aara.png)
+
 # ARD Audiothek RSS Adapter
 
 The ARD Audiothek RSS Adapter allows you to create RSS feeds for ARD Audiothek shows that do not provide their own feeds. It works by scraping the show page for episode information and generating a valid RSS 2.0 feed on the fly.
 
 This tool is meant to be a simple, self-hostable service that can be used to create custom RSS feeds for ARD Audiothek content, enabling users to subscribe to shows in their preferred podcast apps even if the original show does not offer an RSS feed.
 
-I use it in combination with [AudioBookShelf](https://github.com/advplyr/audiobookshelf).
+I use it in combination with [Audiobookshelf](https://github.com/advplyr/audiobookshelf).
 
 The ARD Audiothek RSS Adapter uses a simple in-memory cache to store generated RSS feeds for a configurable duration (default 6 hours) to reduce load on the ARD Audiothek servers and improve response times for frequently accessed shows. You can configure the cache TTL via the `AARA_CACHE_TTL_SECONDS` environment variable.
 
