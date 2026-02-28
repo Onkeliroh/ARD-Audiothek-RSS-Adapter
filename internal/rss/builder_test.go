@@ -131,9 +131,13 @@ func TestBuildProducesFullyPopulatedRSSFeed(t *testing.T) {
 		t.Error("expected duration in description")
 	}
 
-	// Episode 2 should have no enclosure (no length)
-	if strings.Count(xmlStr, "<enclosure") != 1 {
-		t.Errorf("expected exactly 1 enclosure, got different count in:\n%s", xmlStr)
+	// Episode 2 should have an enclosure with length=0 (no LengthBytes provided)
+	if strings.Count(xmlStr, "<enclosure") != 2 {
+		t.Errorf("expected exactly 2 enclosures, got different count in:\n%s", xmlStr)
+	}
+	// Episode 1 should have length=1024, Episode 2 should have length=0
+	if !strings.Contains(xmlStr, `length="0"`) {
+		t.Error("expected length=0 for episode without LengthBytes")
 	}
 
 	// Episode 2 description should contain fallback
@@ -192,9 +196,19 @@ func TestBuildHandlesMissingDatesAndAudioFallbacks(t *testing.T) {
 		t.Error("expected no pubDate when episodes have no dates")
 	}
 
-	// Episode 3: no enclosure (no lengthBytes)
-	if strings.Contains(xmlStr, "<enclosure") {
-		t.Error("expected no enclosure when audio has no length")
+	// Episode 3: should have enclosure with length=0 (has URL but no lengthBytes)
+	if !strings.Contains(xmlStr, "<enclosure") {
+		t.Error("expected enclosure for episode 3 with audio URL")
+	}
+	if !strings.Contains(xmlStr, `length="0"`) {
+		t.Error("expected length=0 for episode 3 without LengthBytes")
+	}
+	if !strings.Contains(xmlStr, `type="audio/aac"`) {
+		t.Error("expected audio/aac mime type for episode 3")
+	}
+	// Episode 4: no enclosure (no audio asset at all)
+	if strings.Count(xmlStr, "<enclosure") != 1 {
+		t.Errorf("expected exactly 1 enclosure (only for episode 3), got different count")
 	}
 
 	// Duration formatting
