@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,7 +18,9 @@
             --font-sans: "Segoe UI", "Helvetica Neue", "Liberation Sans", sans-serif;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -43,8 +46,15 @@
         }
 
         @keyframes floatIn {
-            from { transform: translateY(30px); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         h1 {
@@ -61,7 +71,32 @@
             color: var(--text-muted);
         }
 
-        .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .hero-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 1.5rem;
+            padding: 0.65rem 1rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: background 160ms ease, transform 160ms ease;
+        }
+
+        .hero-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
 
         label {
             font-size: 0.85rem;
@@ -102,8 +137,13 @@
             transition: transform 120ms ease, box-shadow 120ms ease;
         }
 
-        button:active  { transform: scale(0.98); }
-        button:hover   { box-shadow: 0 10px 20px rgba(255, 202, 40, 0.35); }
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            box-shadow: 0 10px 20px rgba(255, 202, 40, 0.35);
+        }
 
         .status {
             margin-top: 1rem;
@@ -124,7 +164,10 @@
             transition: opacity 200ms ease;
         }
 
-        .result-card.is-hidden { opacity: 0; pointer-events: none; }
+        .result-card.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
 
         .result-card span {
             font-size: 0.85rem;
@@ -140,9 +183,15 @@
             text-decoration: none;
         }
 
-        .result-card a:hover { text-decoration: underline; }
+        .result-card a:hover {
+            text-decoration: underline;
+        }
 
-        .examples { margin-top: 2rem; display: grid; gap: 0.45rem; }
+        .examples {
+            margin-top: 2rem;
+            display: grid;
+            gap: 0.45rem;
+        }
 
         .examples button {
             background: rgba(255, 255, 255, 0.15);
@@ -154,22 +203,37 @@
         }
 
         @media (max-width: 540px) {
-            body  { padding: 1.25rem; }
-            main  { padding: 1.75rem; }
-            .form-row { flex-direction: column; }
-            button { width: 100%; }
+            body {
+                padding: 1.25rem;
+            }
+
+            main {
+                padding: 1.75rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
+
 <body>
     <main>
         <h1>ARD Audiothek RSS Mapper</h1>
-        <p>Paste the exact Audiothek show URL (including https://) to get the matching RSS feed exposed by this service.</p>
+        <a class="hero-link" href="https://www.ardaudiothek.de/" target="_blank" rel="noopener noreferrer">
+            Direkt zur ARD Audiothek ↗
+        </a>
+        <p>Paste the exact Audiothek show URL (including https://) to get the matching RSS feed exposed by this service.
+        </p>
         <label for="audiothek-input">Audiothek Show URL</label>
         <div class="form-row">
-            <input type="text" id="audiothek-input"
-                   placeholder="Example: https://www.ardaudiothek.de/sendung/..."
-                   autocomplete="off" spellcheck="false" />
+            <input type="text" id="audiothek-input" placeholder="Example: https://www.ardaudiothek.de/sendung/..."
+                autocomplete="off" spellcheck="false" />
             <button type="button" id="map-button" aria-label="Generate RSS link">Map</button>
         </div>
         <div class="status" id="status">Paste a value and press enter to start.</div>
@@ -180,11 +244,11 @@
         <section class="examples">
             <label>Examples</label>
             <button type="button"
-                    data-sample="https://www.ardaudiothek.de/sendung/grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837/">
+                data-sample="https://www.ardaudiothek.de/sendung/grosse-geschichten-ard-literatur-hoerspiele/urn:ard:show:de76181e5527c837/">
                 Show URL
             </button>
             <button type="button"
-                    data-sample="https://www.ardaudiothek.de/sendung/chefredakteur/urn:ard:show:b658904449239b07/">
+                data-sample="https://www.ardaudiothek.de/sendung/chefredakteur/urn:ard:show:b658904449239b07/">
                 Alternate URL
             </button>
         </section>
@@ -233,7 +297,34 @@
                     input.focus();
                 });
             });
+
+            resultLink.addEventListener("click", (event) => {
+                const targetUrl = resultLink.href;
+                if (!targetUrl) {
+                    return;
+                }
+
+                event.preventDefault();
+                const onCopySuccess = () => {
+                    status.textContent = "Link kopiert – neues Tab geoeffnet.";
+                    window.open(targetUrl, "_blank", "noopener,noreferrer");
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard
+                        .writeText(targetUrl)
+                        .then(onCopySuccess)
+                        .catch(() => {
+                            status.textContent = "Konnte nicht kopieren – oeffne nur den Link.";
+                            window.open(targetUrl, "_blank", "noopener,noreferrer");
+                        });
+                } else {
+                    status.textContent = "Zwischenspeicher nicht verfuegbar – oeffne Link.";
+                    window.open(targetUrl, "_blank", "noopener,noreferrer");
+                }
+            });
         })();
     </script>
 </body>
+
 </html>
