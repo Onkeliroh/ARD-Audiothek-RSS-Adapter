@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/models"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/models"
 )
 
 const (
@@ -86,7 +86,7 @@ func Parse(html string) (*models.ShowDetails, error) {
 }
 
 func mapEpisode(node map[string]any) (*models.EpisodeDetails, error) {
-	title := stringField(node, "title")
+	title := strings.TrimSpace(stringField(node, "title"))
 	if title == "" {
 		return nil, errors.New("episode has no title")
 	}

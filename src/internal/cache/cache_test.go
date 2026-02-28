@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/cache"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/cache"
 )
 
 func TestReturnsCachedValueWhileEntryIsFresh(t *testing.T) {

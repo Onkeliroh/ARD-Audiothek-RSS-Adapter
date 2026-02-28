@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/parser"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/parser"
 )
 
 func readFixture(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile("../../testdata/jagd-auf-fantomas.html")
+	data, err := os.ReadFile("../../../testdata/jagd-auf-fantomas.html")
 	if err != nil {
 		t.Fatalf("could not read fixture: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestParsesShowDetailsFromNextData(t *testing.T) {
 		t.Errorf("episodes count = %d, want 12", len(show.Episodes))
 	}
 	first := show.Episodes[0]
-	if first.Title != "Jagd auf Fantomas (Trailer) " {
+	if first.Title != "Jagd auf Fantomas (Trailer)" {
 		t.Errorf("first episode title = %q", first.Title)
 	}
 	if first.Link != "https://www.ardaudiothek.de/episode/urn:ard:extra:95856bc858a741da/" {
@@ -117,7 +117,7 @@ func TestParseFallbackFieldsAndFiltersInvalidEpisodes(t *testing.T) {
 	}
 
 	ep := show.Episodes[0]
-	if ep.Title != " Episode Trim " {
+	if ep.Title != "Episode Trim" {
 		t.Errorf("episode title = %q", ep.Title)
 	}
 	if ep.Summary != "Short" {

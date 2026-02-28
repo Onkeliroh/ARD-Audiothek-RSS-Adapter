@@ -1,10 +1,10 @@
 # Copilot Instructions
 
 ## Big Picture Architecture
-- This service is a small Go HTTP server (see `cmd/server/main.go`) exposing `GET /rss/feed/{feedUrl...}` plus a health endpoint and UI.
+- This service is a small Go HTTP server (see `src/cmd/server/main.go`) exposing `GET /rss/feed/{feedUrl...}` plus a health endpoint and UI.
 - Request flow: HTTP route → `ShowPageClient.FetchShow()` scrapes the public ARD Audiothek web page → `parser.Parse()` decodes the `__NEXT_DATA__` payload into `ShowDetails`/`EpisodeDetails` → `rss.Build()` turns that into an RSS 2.0 document.
-- All episodes and shows use the lightweight domain layer in `internal/models/models.go`; treat these as immutable DTOs when passing between components.
-- RSS serialization uses Go's `encoding/xml` with custom structs in `internal/rss/builder.go`.
+- All episodes and shows use the lightweight domain layer in `src/internal/models/models.go`; treat these as immutable DTOs when passing between components.
+- RSS serialization uses Go's `encoding/xml` with custom structs in `src/internal/rss/builder.go`.
 
 ## Key Conventions & Integration Points
 - HTTP fetching lives exclusively in `client.ShowPageClient`; it expects callers to pass the exact Audiothek show URL (http/https) and returns the parsed HTML response.
@@ -16,13 +16,14 @@
 
 ## Build, Run, Test
 - Standard workflow: `go test -race ./...` for full test suite. Tests include `builder_test.go`, `parser_test.go`, `client_test.go`, and `server_test.go`.
-- Local dev run: `go build -o server ./cmd/server && ./server` or `go run ./cmd/server`.
+- Local dev run: `go build -o server ./src/cmd/server && ./server` or `go run ./src/cmd/server`.
 - Container image: `docker build -t ard-audiothek-rss-adapter .` builds a Docker image.
 - Tests parse real-world HTML at `testdata/jagd-auf-fantomas.html`.
 
 ## When Extending Functionality
 - Reuse the shared `http.Client` configured with a 30-second timeout.
 - Return `ShowRetrievalError` for upstream HTTP failures and `ShowParsingError` for payload issues so handlers can return appropriate status codes (502 vs 500).
+- Feed URLs are restricted to `www.ardaudiothek.de`; keep this host validation in place when changing URL handling.
 - Any new outbound requests should send realistic Accept/Accept-Language headers to avoid ARD blocking traffic.
 - The service uses standard Go concurrency patterns; avoid blocking calls where possible.
 - Add fixtures under `testdata/` and cover tricky parsing cases with focused tests.

@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/models"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/parser"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/validator"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/models"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/parser"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/validator"
 )
 
 // ShowRetrievalError is returned when the upstream HTTP request fails.

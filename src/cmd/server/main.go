@@ -1,43 +1,54 @@
 package main
 
 import (
+	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/cache"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/client"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/parser"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/rss"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/validator"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/cache"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/client"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/parser"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/rss"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/validator"
 )
 
 //go:embed templates
 var templateFS embed.FS
 
 const (
-	defaultPort   = 8411
+	defaultPort     = 8411
 	defaultCacheTTL = 6 * time.Hour
 )
 
 type errorPageData struct {
 	StatusCode int
-	Message    string
+	ErrorCode  string
 }
 
+const (
+	errorCodeInvalidFeedURL      = "E_INVALID_FEED_URL"
+	errorCodeUpstreamUnavailable = "E_UPSTREAM_UNAVAILABLE"
+	errorCodeParsingFailed       = "E_PARSING_FAILED"
+	errorCodeUnexpectedFailure   = "E_UNEXPECTED_FAILURE"
+)
+
 type server struct {
-	showClient  *client.ShowPageClient
-	feedCache   *cache.RSSFeedCache
-	indexTmpl   *template.Template
-	errorTmpl   *template.Template
-	logger      *slog.Logger
+	showClient *client.ShowPageClient
+	feedCache  *cache.RSSFeedCache
+	indexTmpl  *template.Template
+	errorTmpl  *template.Template
+	logger     *slog.Logger
 }
 
 // newServer wires up the handler tree and returns the resulting http.Handler.
@@ -75,10 +86,38 @@ func main() {
 	mux := newServer(showClient, feedCache)
 
 	addr := fmt.Sprintf(":%d", port)
+	httpServer := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	errCh := make(chan error, 1)
 	logger.Info("Server ready", "addr", fmt.Sprintf("http://localhost%s/", addr))
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		logger.Error("Server error", "err", err)
-		os.Exit(1)
+	go func() {
+		errCh <- httpServer.ListenAndServe()
+	}()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			logger.Error("Server shutdown failed", "err", err)
+			os.Exit(1)
+		}
+		logger.Info("Server stopped")
+	case err := <-errCh:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("Server error", "err", err)
+			os.Exit(1)
+		}
 	}
 }
 
@@ -109,7 +148,8 @@ func (s *server) handleRSSFeed(w http.ResponseWriter, r *http.Request) {
 
 	feedURL, err := validator.Normalize(rawFeedURL)
 	if err != nil {
-		s.respondError(w, http.StatusBadRequest, err.Error())
+		s.logger.Warn("Invalid feed URL", "url", rawFeedURL, "err", err)
+		s.respondError(w, http.StatusBadRequest, errorCodeInvalidFeedURL)
 		return
 	}
 
@@ -123,14 +163,17 @@ func (s *server) handleRSSFeed(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if validator.IsInvalidFeedURLError(err) {
-			s.respondError(w, http.StatusBadRequest, err.Error())
+			s.logger.Warn("Invalid feed URL", "url", feedURL, "err", err)
+			s.respondError(w, http.StatusBadRequest, errorCodeInvalidFeedURL)
 		} else if client.IsShowRetrievalError(err) {
-			s.respondError(w, http.StatusBadGateway, err.Error())
+			s.logger.Warn("Upstream request failed", "url", feedURL, "err", err)
+			s.respondError(w, http.StatusBadGateway, errorCodeUpstreamUnavailable)
 		} else if parser.IsShowParsingError(err) {
-			s.respondError(w, http.StatusInternalServerError, err.Error())
+			s.logger.Error("Parsing feed failed", "url", feedURL, "err", err)
+			s.respondError(w, http.StatusInternalServerError, errorCodeParsingFailed)
 		} else {
 			s.logger.Error("Unhandled error while rendering RSS feed", "url", feedURL, "err", err)
-			s.respondError(w, http.StatusInternalServerError, "Unexpected server error.")
+			s.respondError(w, http.StatusInternalServerError, errorCodeUnexpectedFailure)
 		}
 		return
 	}
@@ -139,10 +182,13 @@ func (s *server) handleRSSFeed(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, xmlStr)
 }
 
-func (s *server) respondError(w http.ResponseWriter, statusCode int, message string) {
+func (s *server) respondError(w http.ResponseWriter, statusCode int, errorCode string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(statusCode)
-	data := errorPageData{StatusCode: statusCode, Message: message}
+	data := errorPageData{
+		StatusCode: statusCode,
+		ErrorCode:  errorCode,
+	}
 	if err := s.errorTmpl.Execute(w, data); err != nil {
 		s.logger.Error("error template render error", "err", err)
 	}

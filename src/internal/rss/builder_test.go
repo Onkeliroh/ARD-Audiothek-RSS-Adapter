@@ -6,28 +6,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/models"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/rss"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/models"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/rss"
 )
 
 func ptr[T any](v T) *T { return &v }
-
-func parseRSS(t *testing.T, xmlStr string) map[string]any {
-	t.Helper()
-	// We just check the raw XML strings for correctness since we control the output.
-	return nil
-}
 
 func TestBuildProducesFullyPopulatedRSSFeed(t *testing.T) {
 	newerPublishDate := mustParseTime("2024-02-03T10:15:30Z")
 	olderPublishDate := mustParseTime("2024-01-01T08:00:00Z")
 
 	show := &models.ShowDetails{
-		ID:          "show-1",
-		Title:       "Sample Show",
-		Description: "",
+		ID:           "show-1",
+		Title:        "Sample Show",
+		Description:  "",
 		CanonicalURL: "https://www.ardaudiothek.de/sendung/sample-show/",
-		ImageURL:    "https://images.example.com/show.jpg",
+		ImageURL:     "https://images.example.com/show.jpg",
 		Episodes: []models.EpisodeDetails{
 			{
 				ID:              "episode-1",
@@ -70,9 +64,7 @@ func TestBuildProducesFullyPopulatedRSSFeed(t *testing.T) {
 
 	// Verify it is valid XML
 	if err := xml.Unmarshal([]byte(xmlStr), &struct{ XMLName xml.Name }{}); err != nil {
-		// parsing the full RSS XML is fine – just check it parses without error
-		// Note: xml.Unmarshal is strict, but we want a loose check here
-		_ = err
+		t.Fatalf("expected valid XML, got parse error: %v", err)
 	}
 
 	// Check iTunes namespace

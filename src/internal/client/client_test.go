@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/client"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/validator"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/client"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/validator"
 )
 
 // roundTripFunc adapts a function to the http.RoundTripper interface.
@@ -24,7 +24,7 @@ const audiothekURL = "https://www.ardaudiothek.de/sendung/jagd-auf-fantomas-ard-
 
 func readFixture(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile("../../testdata/jagd-auf-fantomas.html")
+	data, err := os.ReadFile("../../../testdata/jagd-auf-fantomas.html")
 	if err != nil {
 		t.Fatalf("could not read fixture: %v", err)
 	}

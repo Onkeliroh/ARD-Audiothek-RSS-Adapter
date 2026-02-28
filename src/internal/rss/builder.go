@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/models"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/models"
 )
 
 const (
 	defaultAuthor     = "ARD Audiothek"
 	defaultOwnerEmail = "info@ard-audiothek.de"
-	defaultCategory   = "Society &amp; Culture"
+	defaultCategory   = "Society & Culture"
 	defaultDesc       = "Episodenfeed aus der ARD Audiothek"
 )
 
@@ -39,22 +39,22 @@ func Build(show *models.ShowDetails) (string, error) {
 	}
 
 	feed := rssRoot{
-		Version:     "2.0",
-		ItunesNS:    "http://www.itunes.com/dtds/podcast-1.0.dtd",
-		ContentNS:   "http://purl.org/rss/1.0/modules/content/",
+		Version:   "2.0",
+		ItunesNS:  "http://www.itunes.com/dtds/podcast-1.0.dtd",
+		ContentNS: "http://purl.org/rss/1.0/modules/content/",
 		Channel: rssChannel{
-			Title:       show.Title,
-			Link:        show.CanonicalURL,
-			Description: description,
-			Language:    "de-DE",
-			PubDate:     pubDate,
-			ItunesAuthor:  defaultAuthor,
+			Title:        show.Title,
+			Link:         show.CanonicalURL,
+			Description:  description,
+			Language:     "de-DE",
+			PubDate:      pubDate,
+			ItunesAuthor: defaultAuthor,
 			ItunesOwner: itunesOwner{
 				Name:  defaultAuthor,
 				Email: defaultOwnerEmail,
 			},
 			ItunesSummary:  description,
-			ItunesCategory: itunesCategory{Text: "Society &amp; Culture"},
+			ItunesCategory: itunesCategory{Text: defaultCategory},
 			ItunesExplicit: "false",
 		},
 	}
@@ -214,17 +214,17 @@ type itunesCategory struct {
 }
 
 type rssItem struct {
-	Title          string        `xml:"title"`
-	Link           string        `xml:"link"`
-	GUID           rssGUID       `xml:"guid"`
-	PubDate        string        `xml:"pubDate,omitempty"`
+	Title          string         `xml:"title"`
+	Link           string         `xml:"link"`
+	GUID           rssGUID        `xml:"guid"`
+	PubDate        string         `xml:"pubDate,omitempty"`
 	Description    rssDescription `xml:"description"`
-	Enclosure      *rssEnclosure `xml:"enclosure,omitempty"`
-	ItunesAuthor   string        `xml:"itunes:author"`
-	ItunesSummary  string        `xml:"itunes:summary,omitempty"`
-	ItunesDuration string        `xml:"itunes:duration,omitempty"`
-	ItunesImage    *itunesImage  `xml:"itunes:image,omitempty"`
-	ItunesExplicit string        `xml:"itunes:explicit"`
+	Enclosure      *rssEnclosure  `xml:"enclosure,omitempty"`
+	ItunesAuthor   string         `xml:"itunes:author"`
+	ItunesSummary  string         `xml:"itunes:summary,omitempty"`
+	ItunesDuration string         `xml:"itunes:duration,omitempty"`
+	ItunesImage    *itunesImage   `xml:"itunes:image,omitempty"`
+	ItunesExplicit string         `xml:"itunes:explicit"`
 }
 
 type rssGUID struct {

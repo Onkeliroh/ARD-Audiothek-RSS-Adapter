@@ -4,12 +4,12 @@ import "time"
 
 // ShowDetails is the domain view of a show page returned by the ARD Audiothek.
 type ShowDetails struct {
-	ID             string
-	Title          string
-	Description    string
-	CanonicalURL   string
-	ImageURL       string
-	Episodes       []EpisodeDetails
+	ID              string
+	Title           string
+	Description     string
+	CanonicalURL    string
+	ImageURL        string
+	Episodes        []EpisodeDetails
 	HasMoreEpisodes bool
 }
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/validator"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/validator"
 )
 
 func TestNormalize(t *testing.T) {
@@ -21,8 +21,13 @@ func TestNormalize(t *testing.T) {
 		},
 		{
 			name:  "valid http URL",
-			input: "http://example.org/path",
-			want:  "http://example.org/path",
+			input: "http://www.ardaudiothek.de/sendung/foo/bar/",
+			want:  "http://www.ardaudiothek.de/sendung/foo/bar/",
+		},
+		{
+			name:    "non ARD host",
+			input:   "https://example.org/path",
+			wantErr: "www.ardaudiothek.de",
 		},
 		{
 			name:    "empty string",

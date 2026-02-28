@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/cache"
-	"github.com/onkeliroh/ard-audiothek-rss-adapter/internal/client"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/cache"
+	"github.com/onkeliroh/ard-audiothek-rss-adapter/src/internal/client"
 )
 
 // roundTripFunc adapts a function to http.RoundTripper.
@@ -23,7 +23,7 @@ const testAudiothekURL = "https://www.ardaudiothek.de/sendung/jagd-auf-fantomas-
 
 func readFixture(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile("../../testdata/jagd-auf-fantomas.html")
+	data, err := os.ReadFile("../../../testdata/jagd-auf-fantomas.html")
 	if err != nil {
 		t.Fatalf("could not read fixture: %v", err)
 	}
@@ -84,22 +84,17 @@ func TestRSSFeedEndpointReturnsCachedDocument(t *testing.T) {
 	sampleHTML := readFixture(t)
 	requestCount := 0
 
-	// Upstream server serving the fixture
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	appSrv := newTestServerWith(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		requestCount++
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		io.WriteString(w, sampleHTML)
+		return &http.Response{
+			StatusCode: 200,
+			Body:       io.NopCloser(strings.NewReader(sampleHTML)),
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+		}, nil
 	}))
-	defer upstream.Close()
-
-	httpClient := upstream.Client()
-	showClient := client.New(httpClient)
-	feedCache := cache.New(time.Hour)
-
-	appSrv := httptest.NewServer(newServer(showClient, feedCache))
 	defer appSrv.Close()
 
-	encodedURL := url.QueryEscape(upstream.URL + "/show/")
+	encodedURL := url.QueryEscape(testAudiothekURL)
 
 	resp1, err := http.Get(appSrv.URL + "/rss/feed/" + encodedURL)
 	if err != nil {
@@ -135,20 +130,16 @@ func TestRSSFeedEndpointReturnsCachedDocument(t *testing.T) {
 }
 
 func TestRSSFeedBubblesUpstreamFailures(t *testing.T) {
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, "upstream-error")
+	appSrv := newTestServerWith(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusInternalServerError,
+			Status:     "500 Internal Server Error",
+			Body:       io.NopCloser(strings.NewReader("upstream-error")),
+		}, nil
 	}))
-	defer upstream.Close()
-
-	httpClient := upstream.Client()
-	showClient := client.New(httpClient)
-	feedCache := cache.New(time.Hour)
-
-	appSrv := httptest.NewServer(newServer(showClient, feedCache))
 	defer appSrv.Close()
 
-	encodedURL := url.QueryEscape(upstream.URL + "/problem-feed")
+	encodedURL := url.QueryEscape(testAudiothekURL)
 	resp, err := http.Get(appSrv.URL + "/rss/feed/" + encodedURL)
 	if err != nil {
 		t.Fatal(err)
@@ -159,26 +150,22 @@ func TestRSSFeedBubblesUpstreamFailures(t *testing.T) {
 	if resp.StatusCode != http.StatusBadGateway {
 		t.Errorf("status = %d, want 502, body = %s", resp.StatusCode, string(body))
 	}
-	if !strings.Contains(string(body), "Failed to fetch show page") {
-		t.Error("expected error message in response")
+	if !strings.Contains(string(body), "E_UPSTREAM_UNAVAILABLE") {
+		t.Error("expected upstream error code in response")
 	}
 }
 
 func TestRSSFeedReturns500WhenParserFails(t *testing.T) {
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		io.WriteString(w, "<html><body>No NEXT data</body></html>")
+	appSrv := newTestServerWith(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("<html><body>No NEXT data</body></html>")),
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+		}, nil
 	}))
-	defer upstream.Close()
-
-	httpClient := upstream.Client()
-	showClient := client.New(httpClient)
-	feedCache := cache.New(time.Hour)
-
-	appSrv := httptest.NewServer(newServer(showClient, feedCache))
 	defer appSrv.Close()
 
-	encodedURL := url.QueryEscape(upstream.URL + "/parser-error")
+	encodedURL := url.QueryEscape(testAudiothekURL)
 	resp, err := http.Get(appSrv.URL + "/rss/feed/" + encodedURL)
 	if err != nil {
 		t.Fatal(err)
@@ -189,8 +176,8 @@ func TestRSSFeedReturns500WhenParserFails(t *testing.T) {
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Errorf("status = %d, want 500, body = %s", resp.StatusCode, string(body))
 	}
-	if !strings.Contains(string(body), "script tag is missing") {
-		t.Errorf("expected parse error message, got: %s", string(body))
+	if !strings.Contains(string(body), "E_PARSING_FAILED") {
+		t.Errorf("expected parsing error code, got: %s", string(body))
 	}
 }
 
@@ -210,7 +197,7 @@ func TestRSSFeedReturns400ForInvalidURLs(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400, body = %s", resp.StatusCode, string(body))
 	}
-	if !strings.Contains(string(body), "Feed URL") {
-		t.Error("expected Feed URL error message")
+	if !strings.Contains(string(body), "E_INVALID_FEED_URL") {
+		t.Error("expected invalid URL error code")
 	}
 }

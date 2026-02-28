@@ -19,7 +19,7 @@ The tool exposes the following HTTP endpoints:
 
 1. `GET /` – Feed mapper UI (enter an Audiothek show URL and get the RSS feed link).
 2. `GET /health` – Returns `ARD Audiothek RSS Adapter is running.`
-3. `GET /rss/feed/{feedUrl...}` – Returns a valid RSS 2.0 feed filled with items fetched from the ARD Audiothek show page at `feedUrl`. The value must be a fully-qualified `https://www.ardaudiothek.de/…` URL. You can pass the raw URL (`/rss/feed/https://www.ardaudiothek.de/sendung/foo/…/`) or provide the percent-encoded variant.
+3. `GET /rss/feed/{feedUrl...}` – Returns a valid RSS 2.0 feed filled with items fetched from the ARD Audiothek show page at `feedUrl`. The value must be a fully-qualified `http://www.ardaudiothek.de/...` or `https://www.ardaudiothek.de/...` URL. Other hosts are rejected. You can pass the raw URL (`/rss/feed/https://www.ardaudiothek.de/sendung/foo/.../`) or provide the percent-encoded variant.
 
 ## Configuration
 
@@ -31,7 +31,7 @@ The tool exposes the following HTTP endpoints:
 ## Building and Running
 
 ```bash
-go build -o server ./cmd/server
+go build -o server ./src/cmd/server
 ./server
 ```
 
