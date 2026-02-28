@@ -1,38 +1,79 @@
 {
-  "name": "ARD Audiothek RSS Adapter",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
-  },
-  "runArgs": [
-    "--init",
-    "-v",
-    "/var/run/docker.sock:/var/run/docker.sock"
-  ],
+  "name": "ARD Audiothek RSS Adapter (Go)",
+  "image": "mcr.microsoft.com/devcontainers/go:1-bookworm",
   "forwardPorts": [8411],
   "portsAttributes": {
     "8411": {
-      "label": "Ktor Server"
+      "label": "RSS Adapter Server",
+      "onAutoForward": "notify"
     }
   },
-  "postCreateCommand": "mvn -version",
+  "postCreateCommand": "go mod download && go version",
   "remoteUser": "vscode",
   "customizations": {
     "vscode": {
       "extensions": [
-        "fwcd.kotlin",
-        "vscjava.vscode-java-pack",
-        "redhat.vscode-yaml"
+         "golang.Go",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "GitHub.copilot-chat",
+        "GitHub.copilot",
+        "oven.bun-vscode",
+        "yzhang.markdown-all-in-one",
+        "DavidAnson.vscode-markdownlint"
       ],
       "settings": {
-        "java.configuration.runtimes": [
-          {
-            "name": "JDK 21",
-            "path": "/usr/lib/jvm/java-21-openjdk-amd64",
-            "default": true
-          }
-        ],
-        "kotlin.compiler.languageVersion": "2.0"
+        // Go settings
+        "go.useLanguageServer": true,
+        "go.lintTool": "staticcheck",
+        "go.lintOnSave": "package",
+        "go.formatTool": "goimports",
+        "go.vetOnSave": "package",
+        "go.testOnSave": false,
+        "go.coverOnSave": false,
+        "go.buildOnSave": "off",
+        "gopls": {
+          "ui.semanticTokens": true,
+          "ui.completion.usePlaceholders": true
+        },
+        
+        // Editor settings
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        },
+        "editor.rulers": [100, 120],
+        "editor.bracketPairColorization.enabled": true,
+        "editor.guides.bracketPairs": true,
+        
+        // File associations
+        "files.eol": "\n",
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "files.associations": {
+          "*.tmpl": "html"
+        },
+        
+        // Terminal
+        "terminal.integrated.defaultProfile.linux": "bash",
+        
+        // Git
+        "git.autofetch": true,
+        "git.confirmSync": false,
+        
+        // Markdown
+        "markdown.preview.breaks": true,
+        
+        // YAML
+        "[yaml]": {
+          "editor.defaultFormatter": "redhat.vscode-yaml"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[markdown]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
       }
     }
   }
