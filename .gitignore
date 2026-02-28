@@ -2,6 +2,7 @@
 /target/
 /build/
 /out/
+/dist/
 
 # IDE metadata
 /.idea/
@@ -27,3 +28,7 @@ Thumbs.db
 # Kotlin/Java tooling
 hs_err_pid*
 .repro
+
+# Go build artifacts
+/server
+coverage.out
