@@ -7,7 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/aara
 
 jobs:
   release:
@@ -19,6 +18,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up image name
+        run: |
+          echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/aara' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Go
         uses: actions/setup-go@v5
