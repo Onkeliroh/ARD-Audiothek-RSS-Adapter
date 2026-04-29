@@ -33,3 +33,4 @@ hs_err_pid*
 /server
 coverage.out
 coverage.html
+server.exe

@@ -30,6 +30,15 @@ The tool exposes the following HTTP endpoints:
 
 ## Building and Running
 
+With [GNU Make](https://www.gnu.org/software/make/) (for example Git Bash on Windows):
+
+```bash
+make check    # lint, tests with -race, build
+make build && ./server
+```
+
+Or directly:
+
 ```bash
 go build -o server ./src/cmd/server
 ./server
@@ -53,5 +62,7 @@ Replace the trailing portion with the exact Audiothek show URL (URL-encode it if
 ## Tests
 
 ```bash
+make test
+# or
 go test -race ./...
 ```
