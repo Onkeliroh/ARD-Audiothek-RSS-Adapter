@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 
 const (
 	defaultImageWidth = "512"
-	basePageURL       = "https://www.ardaudiothek.de"
+	defaultBaseURL    = "https://www.ardaudiothek.de"
 )
 
 // ShowParsingError is returned when the ARD Audiothek page cannot be parsed.
@@ -30,7 +31,10 @@ func IsShowParsingError(err error) bool {
 }
 
 // Parse extracts ShowDetails from the raw HTML of an ARD Audiothek show page.
-func Parse(html string) (*models.ShowDetails, error) {
+// pageBaseURL is used to build absolute canonical URLs; if empty it defaults to
+// "https://www.ardaudiothek.de".
+func Parse(html string, pageBaseURL string) (*models.ShowDetails, error) {
+	base := resolveBase(pageBaseURL)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, &ShowParsingError{Message: fmt.Sprintf("could not parse HTML: %s", err)}
@@ -62,7 +66,7 @@ func Parse(html string) (*models.ShowDetails, error) {
 		if !ok {
 			continue
 		}
-		ep, err := mapEpisode(node)
+		ep, err := mapEpisode(node, base)
 		if err != nil {
 			continue
 		}
@@ -78,14 +82,14 @@ func Parse(html string) (*models.ShowDetails, error) {
 		ID:              id,
 		Title:           title,
 		Description:     description,
-		CanonicalURL:    buildCanonicalURL(path),
+		CanonicalURL:    buildCanonicalURL(path, base),
 		ImageURL:        imageURL,
 		Episodes:        episodes,
 		HasMoreEpisodes: hasMore,
 	}, nil
 }
 
-func mapEpisode(node map[string]any) (*models.EpisodeDetails, error) {
+func mapEpisode(node map[string]any, base string) (*models.EpisodeDetails, error) {
 	title := strings.TrimSpace(stringField(node, "title"))
 	if title == "" {
 		return nil, errors.New("episode has no title")
@@ -170,7 +174,7 @@ func mapEpisode(node map[string]any) (*models.EpisodeDetails, error) {
 		PublishDate:     publishDate,
 		DurationSeconds: durationSeconds,
 		Audio:           audio,
-		Link:            buildCanonicalURL(linkPath),
+		Link:            buildCanonicalURL(linkPath, base),
 		ImageURL:        imageURL,
 	}, nil
 }
@@ -191,17 +195,30 @@ func extractNextData(doc *goquery.Document) (map[string]any, error) {
 	return result, nil
 }
 
-func buildCanonicalURL(path string) string {
+func buildCanonicalURL(path, base string) string {
 	if strings.TrimSpace(path) == "" {
-		return basePageURL
+		return base
 	}
 	sanitized := strings.TrimPrefix(path, "/")
-	base := strings.TrimRight(basePageURL, "/")
-	result := base + "/" + sanitized
+	trimmedBase := strings.TrimRight(base, "/")
+	result := trimmedBase + "/" + sanitized
 	if !strings.HasSuffix(result, "/") {
 		result += "/"
 	}
 	return result
+}
+
+// resolveBase returns the scheme+host portion of pageURL, falling back to
+// defaultBaseURL when pageURL is empty or cannot be parsed.
+func resolveBase(pageURL string) string {
+	if pageURL == "" {
+		return defaultBaseURL
+	}
+	u, err := url.Parse(pageURL)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return defaultBaseURL
+	}
+	return u.Scheme + "://" + u.Host
 }
 
 func extractImageURL(node map[string]any) string {

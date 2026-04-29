@@ -25,7 +25,7 @@ func wrapPayload(payload string) string {
 
 func TestParsesShowDetailsFromNextData(t *testing.T) {
 	html := readFixture(t)
-	show, err := parser.Parse(html)
+	show, err := parser.Parse(html, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestParseFallbackFieldsAndFiltersInvalidEpisodes(t *testing.T) {
 			}
 		}
 	}`)
-	show, err := parser.Parse(html)
+	show, err := parser.Parse(html, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestParseFallbackFieldsAndFiltersInvalidEpisodes(t *testing.T) {
 }
 
 func TestParseThrowsWhenNextDataScriptIsMissing(t *testing.T) {
-	_, err := parser.Parse("<html><body><p>No script</p></body></html>")
+	_, err := parser.Parse("<html><body><p>No script</p></body></html>", "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -152,7 +152,7 @@ func TestParseThrowsWhenNextDataScriptIsMissing(t *testing.T) {
 
 func TestParseThrowsWhenResultNodeIsMissing(t *testing.T) {
 	html := wrapPayload(`{"props":{"pageProps":{"initialData":{"data":{}}}}}`)
-	_, err := parser.Parse(html)
+	_, err := parser.Parse(html, "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -163,7 +163,7 @@ func TestParseThrowsWhenResultNodeIsMissing(t *testing.T) {
 
 func TestParseThrowsWhenNextPayloadIsEmpty(t *testing.T) {
 	html := `<html><body><script id="__NEXT_DATA__" type="application/json"></script></body></html>`
-	_, err := parser.Parse(html)
+	_, err := parser.Parse(html, "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -174,7 +174,7 @@ func TestParseThrowsWhenNextPayloadIsEmpty(t *testing.T) {
 
 func TestParseThrowsWhenNextPayloadIsInvalidJSON(t *testing.T) {
 	html := `<html><body><script id="__NEXT_DATA__" type="application/json">{not-json}</script></body></html>`
-	_, err := parser.Parse(html)
+	_, err := parser.Parse(html, "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -218,7 +218,7 @@ func TestParsePreferFirstUsableAudioURL(t *testing.T) {
 		}
 	}`)
 
-	show, err := parser.Parse(html)
+	show, err := parser.Parse(html, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -231,5 +231,55 @@ func TestParsePreferFirstUsableAudioURL(t *testing.T) {
 	}
 	if audio.MimeType != "audio/aac" {
 		t.Errorf("audio mimeType = %q, want audio/aac", audio.MimeType)
+	}
+}
+
+func TestParseUsesProvidedBaseURLForCanonicalLinks(t *testing.T) {
+	html := wrapPayload(`{
+		"props": {
+			"pageProps": {
+				"initialData": {
+					"data": {
+						"result": {
+							"coreId": "urn:ard:show:sounds",
+							"title": "Sounds Show",
+							"description": "A sounds show",
+							"path": "/sendung/sounds-show/urn:ard:show:sounds/",
+							"image": { "url": "" },
+							"items": {
+								"pageInfo": { "hasNextPage": false },
+								"nodes": [{
+									"coreId": "urn:ard:episode:sounds",
+									"title": "Sounds Episode",
+									"summary": null,
+									"publishDate": null,
+									"duration": null,
+									"path": "/episode/sounds-episode/urn:ard:episode:sounds/",
+									"image": { "url": "" },
+									"audios": [{ "url": "https://cdn.example.com/audio.mp3" }]
+								}]
+							}
+						}
+					}
+				}
+			}
+		}
+	}`)
+
+	show, err := parser.Parse(html, "https://www.ardsounds.de/sendung/sounds-show/urn:ard:show:sounds/")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	wantShowURL := "https://www.ardsounds.de/sendung/sounds-show/urn:ard:show:sounds/"
+	if show.CanonicalURL != wantShowURL {
+		t.Errorf("show CanonicalURL = %q, want %q", show.CanonicalURL, wantShowURL)
+	}
+	if len(show.Episodes) != 1 {
+		t.Fatalf("episodes count = %d, want 1", len(show.Episodes))
+	}
+	wantEpLink := "https://www.ardsounds.de/episode/sounds-episode/urn:ard:episode:sounds/"
+	if show.Episodes[0].Link != wantEpLink {
+		t.Errorf("episode Link = %q, want %q", show.Episodes[0].Link, wantEpLink)
 	}
 }

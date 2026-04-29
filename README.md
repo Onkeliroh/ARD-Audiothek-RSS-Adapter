@@ -19,7 +19,7 @@ The tool exposes the following HTTP endpoints:
 
 1. `GET /` – Feed mapper UI (enter an Audiothek show URL and get the RSS feed link).
 2. `GET /health` – Returns `ARD Audiothek RSS Adapter is running.`
-3. `GET /rss/feed/{feedUrl...}` – Returns a valid RSS 2.0 feed filled with items fetched from the ARD Audiothek show page at `feedUrl`. The value must be a fully-qualified `http://www.ardaudiothek.de/...` or `https://www.ardaudiothek.de/...` URL. Other hosts are rejected. You can pass the raw URL (`/rss/feed/https://www.ardaudiothek.de/sendung/foo/.../`) or provide the percent-encoded variant.
+3. `GET /rss/feed/{feedUrl...}` – Returns a valid RSS 2.0 feed filled with items fetched from the show page at `feedUrl`. The value must be a fully-qualified `http(s)://www.ardaudiothek.de/...` or `http(s)://www.ardsounds.de/...` URL. Other hosts are rejected. You can pass the raw URL (`/rss/feed/https://www.ardaudiothek.de/sendung/foo/.../`) or provide the percent-encoded variant.
 
 ## Configuration
 
@@ -29,6 +29,15 @@ The tool exposes the following HTTP endpoints:
 | `AARA_CACHE_TTL_SECONDS`  | `21600` (6 h) | RSS cache TTL in seconds   |
 
 ## Building and Running
+
+With [GNU Make](https://www.gnu.org/software/make/) (for example Git Bash on Windows):
+
+```bash
+make check    # lint, tests with -race, build
+make build && ./server
+```
+
+Or directly:
 
 ```bash
 go build -o server ./src/cmd/server
@@ -53,5 +62,7 @@ Replace the trailing portion with the exact Audiothek show URL (URL-encode it if
 ## Tests
 
 ```bash
+make test
+# or
 go test -race ./...
 ```

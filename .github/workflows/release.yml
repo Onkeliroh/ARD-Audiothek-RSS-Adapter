@@ -30,7 +30,7 @@ jobs:
           cache: true
 
       - name: Run tests
-        run: go test -v -race ./src/...
+        run: go test -v -race ./...
 
       - name: Determine release metadata
         run: |

@@ -25,9 +25,14 @@ func TestNormalize(t *testing.T) {
 			want:  "http://www.ardaudiothek.de/sendung/foo/bar/",
 		},
 		{
+			name:  "valid ardsounds URL",
+			input: "https://www.ardsounds.de/sendung/reclaim-tic-tac-toe/urn:ard:show:bc0ac195183639e0/",
+			want:  "https://www.ardsounds.de/sendung/reclaim-tic-tac-toe/urn:ard:show:bc0ac195183639e0/",
+		},
+		{
 			name:    "non ARD host",
 			input:   "https://example.org/path",
-			wantErr: "www.ardaudiothek.de",
+			wantErr: "www.ardaudiothek.de or www.ardsounds.de",
 		},
 		{
 			name:    "empty string",
