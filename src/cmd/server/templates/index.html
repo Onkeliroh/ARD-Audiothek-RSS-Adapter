@@ -8,13 +8,15 @@
     <style>
         :root {
             color-scheme: light;
-            --bg-gradient: linear-gradient(135deg, #001a4d, #00357a, #0b6cff);
-            --card-bg: rgba(255, 255, 255, 0.08);
-            --card-border: rgba(255, 255, 255, 0.25);
-            --accent: #ffca28;
-            --text-primary: #f4f6fb;
-            --text-muted: #b9c3e6;
-            --input-bg: rgba(255, 255, 255, 0.15);
+            --page-bg: #c9ced6;
+            --panel-bg: #eceff3;
+            --panel-border: #8a9099;
+            --panel-shadow: #ffffff;
+            --accent: #1f3f7a;
+            --accent-soft: #d6dceb;
+            --text-primary: #1c2128;
+            --text-muted: #4d5968;
+            --input-bg: #ffffff;
             --font-sans: "Segoe UI", "Helvetica Neue", "Liberation Sans", sans-serif;
         }
 
@@ -30,31 +32,17 @@
             justify-content: center;
             padding: 2rem;
             font-family: var(--font-sans);
-            background: var(--bg-gradient);
+            background: var(--page-bg);
             color: var(--text-primary);
         }
 
         main {
             width: min(640px, 100%);
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
+            background: var(--panel-bg);
+            border: 2px solid var(--panel-border);
+            border-radius: 4px;
             padding: 2.5rem;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 25px 60px rgba(0, 14, 56, 0.4);
-            animation: floatIn 500ms ease;
-        }
-
-        @keyframes floatIn {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            box-shadow: 2px 2px 0 var(--panel-shadow), 5px 5px 0 rgba(0, 0, 0, 0.18);
         }
 
         h1 {
@@ -77,6 +65,7 @@
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
+            margin-bottom: 0.85rem;
         }
 
         .title-text {
@@ -89,21 +78,22 @@
             align-items: center;
             gap: 0.25rem;
             padding: 0.25rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid var(--panel-border);
+            border-radius: 3px;
+            background: #dde2ea;
         }
 
         .lang-switch button {
-            border: none;
+            border: 1px solid transparent;
             background: transparent;
             color: var(--text-primary);
             font-weight: 600;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
-            padding: 0.35rem 0.85rem;
-            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+            border-radius: 3px;
             cursor: pointer;
-            transition: background 140ms ease, color 140ms ease;
+            transition: background 120ms ease, border-color 120ms ease;
         }
 
         .lang-switch button+button {
@@ -111,8 +101,9 @@
         }
 
         .lang-switch button.is-active {
-            background: var(--accent);
-            color: #0c1a3c;
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: #11254d;
         }
 
         .lang-switch button:focus-visible {
@@ -125,73 +116,80 @@
             align-items: center;
             gap: 0.4rem;
             margin-bottom: 1.5rem;
-            padding: 0.65rem 1rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--text-primary);
+            padding: 0.55rem 0.85rem;
+            border-radius: 3px;
+            border: 1px solid var(--panel-border);
+            background: #e4e8ef;
+            color: #1a2f58;
             text-decoration: none;
             font-weight: 600;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.02em;
             text-transform: uppercase;
-            transition: background 160ms ease, transform 160ms ease;
+            transition: background 120ms ease;
         }
 
         .hero-link:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
+            background: #d8dde6;
         }
 
         .form-row {
             display: flex;
             gap: 0.75rem;
-            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: stretch;
         }
 
         label {
             font-size: 0.85rem;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            color: var(--accent);
+            color: #2b457c;
         }
 
-        input[type="text"] {
-            flex: 1;
-            min-width: 240px;
+        #audiothek-input {
+            width: 100%;
             padding: 0.95rem 1.1rem;
-            border-radius: 16px;
-            border: 1px solid transparent;
+            border-radius: 3px;
+            border: 1px solid #9ba2ac;
             background: var(--input-bg);
             color: var(--text-primary);
             font-size: 1rem;
-            transition: border-color 150ms ease, background 150ms ease;
+            line-height: 1.4;
+            min-height: 7.25rem;
+            resize: vertical;
+            transition: border-color 120ms ease;
+            font-family: inherit;
         }
 
-        input[type="text"]:focus {
+        #audiothek-input:focus {
             outline: none;
             border-color: var(--accent);
-            background: rgba(255, 255, 255, 0.22);
         }
 
         button {
             padding: 0.95rem 1.5rem;
-            border: none;
-            border-radius: 16px;
-            background: var(--accent);
-            color: #0c1a3c;
+            border: 1px solid #153164;
+            border-radius: 3px;
+            background: var(--accent-soft);
+            color: #142d59;
             font-weight: 600;
             font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             cursor: pointer;
-            transition: transform 120ms ease, box-shadow 120ms ease;
+            transition: background 120ms ease;
+        }
+
+        #map-button {
+            align-self: flex-start;
         }
 
         button:active {
-            transform: scale(0.98);
+            background: #c7d0e3;
         }
 
         button:hover {
-            box-shadow: 0 10px 20px rgba(255, 202, 40, 0.35);
+            background: #ccd5e8;
         }
 
         .status {
@@ -204,9 +202,9 @@
         .result-card {
             margin-top: 1.5rem;
             padding: 1.5rem;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            background: rgba(12, 26, 60, 0.6);
+            border-radius: 3px;
+            border: 1px solid #9aa1ab;
+            background: #f4f6f9;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
@@ -227,7 +225,7 @@
 
         .result-card a {
             word-break: break-all;
-            color: var(--accent);
+            color: #204a93;
             font-size: 1rem;
             text-decoration: none;
         }
@@ -238,24 +236,39 @@
 
         .examples {
             margin-top: 2rem;
-            display: grid;
-            gap: 0.45rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            position: relative;
+            border: 1px solid #9ba2ac;
+            border-radius: 3px;
+            padding: 1.1rem 0.75rem 0.7rem;
+            background: #f1f4f8;
         }
 
         .examples button {
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--text-primary);
+            background: #e4e8ef;
+            color: #1c2128;
             text-transform: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             letter-spacing: normal;
-            padding: 0.8rem 1rem;
+            padding: 0.5rem 0.75rem;
+            border-color: #9ba2ac;
         }
 
         .examples-title {
             font-size: 0.85rem;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            color: var(--accent);
+            color: #2b457c;
+            margin: 0;
+            position: absolute;
+            top: -0.55rem;
+            left: 0.55rem;
+            padding: 0 0.35rem;
+            background: var(--panel-bg);
+            line-height: 1;
         }
 
         @media (max-width: 540px) {
@@ -267,12 +280,12 @@
                 padding: 1.75rem;
             }
 
-            .form-row {
-                flex-direction: column;
-            }
-
             button {
                 width: 100%;
+            }
+
+            #map-button {
+                align-self: stretch;
             }
 
             .page-header {
@@ -299,14 +312,14 @@
         </header>
         <a class="hero-link" id="hero-link" href="https://www.ardaudiothek.de/" target="_blank"
             rel="noopener noreferrer">
-            Direkt zur ARD Audiothek ↗
+            Besuche die ARD AUDIOTHEK
         </a>
         <p id="description-text">Fuege die exakte Audiothek-Show-URL (inklusive https://) ein, um den passenden RSS-Feed
             dieses Services zu erhalten.</p>
         <label for="audiothek-input" id="input-label">Audiothek Show URL</label>
         <div class="form-row">
-            <input type="text" id="audiothek-input" placeholder="Beispiel: https://www.ardaudiothek.de/sendung/..."
-                autocomplete="off" spellcheck="false" />
+            <textarea id="audiothek-input" placeholder="Beispiel: https://www.ardaudiothek.de/sendung/..." rows="3"
+                spellcheck="false"></textarea>
             <button type="button" id="map-button" aria-label="RSS-Link generieren">Feed erzeugen</button>
         </div>
         <div class="status" id="status">Fuege einen Wert ein und druecke Enter zum Start.</div>
@@ -348,7 +361,7 @@
             const translations = {
                 de: {
                     title: "ARD Audiothek RSS Mapper",
-                    heroLink: "Direkt zur ARD Audiothek ↗",
+                    heroLink: "Besuche die ARD AUDIOTHEK",
                     heroLinkAria: "Öffnet die ARD Audiothek in einem neuen Tab",
                     description: "Füge die exakte Audiothek-Show-URL (inklusive https://) ein, um den passenden RSS-Feed dieses Services zu erhalten.",
                     label: "Audiothek Show URL",
@@ -372,7 +385,7 @@
                 },
                 en: {
                     title: "ARD Audiothek RSS Mapper",
-                    heroLink: "Go to ARD Audiothek ↗",
+                    heroLink: "Visit the ARD AUDIOTHEK",
                     heroLinkAria: "Opens ARD Audiothek in a new tab",
                     description: "Paste the exact Audiothek show URL (including https://) to generate the RSS feed provided by this service.",
                     label: "Audiothek show URL",
@@ -504,7 +517,7 @@
 
             mapButton.addEventListener("click", renderResult);
             input.addEventListener("keydown", (event) => {
-                if (event.key === "Enter") {
+                if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
                     event.preventDefault();
                     renderResult();
                 }
