@@ -21,6 +21,7 @@ func httpClientWith(fn roundTripFunc) *http.Client {
 }
 
 const audiothekURL = "https://www.ardaudiothek.de/sendung/jagd-auf-fantomas-ard-hoerspiel-serie/urn:ard:show:ef3205b54d97da0e/"
+const ardsoundsURL = "https://www.ardsounds.de/sendung/reclaim-tic-tac-toe/urn:ard:show:bc0ac195183639e0/"
 
 func readFixture(t *testing.T) string {
 	t.Helper()
@@ -96,5 +97,27 @@ func TestFetchShowRejectsInvalidURLs(t *testing.T) {
 	}
 	if !validator.IsInvalidFeedURLError(err) {
 		t.Errorf("expected InvalidFeedURLError, got %T", err)
+	}
+}
+
+func TestFetchShowSupportsArdSoundsHost(t *testing.T) {
+	sampleHTML := readFixture(t)
+
+	var capturedReq *http.Request
+	mockClient := httpClientWith(func(req *http.Request) (*http.Response, error) {
+		capturedReq = req
+		return &http.Response{
+			StatusCode: 200,
+			Body:       io.NopCloser(strings.NewReader(sampleHTML)),
+		}, nil
+	})
+
+	c := client.New(mockClient)
+	_, err := c.FetchShow(ardsoundsURL)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if capturedReq.URL.String() != ardsoundsURL {
+		t.Fatalf("request URL = %q, want %q", capturedReq.URL.String(), ardsoundsURL)
 	}
 }

@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-const primaryHost = "www.ardaudiothek.de"
+const (
+	primaryHost = "www.ardaudiothek.de"
+	soundsHost  = "www.ardsounds.de"
+)
 
 // InvalidFeedURLError is returned when the supplied URL is not a valid Audiothek show URL.
 type InvalidFeedURLError struct {
@@ -37,8 +40,8 @@ func Normalize(rawValue string) (string, error) {
 		return "", &InvalidFeedURLError{Message: "Feed URL must include a hostname."}
 	}
 	host := strings.ToLower(u.Hostname())
-	if host != primaryHost {
-		return "", &InvalidFeedURLError{Message: "Feed URL must use host www.ardaudiothek.de."}
+	if host != primaryHost && host != soundsHost {
+		return "", &InvalidFeedURLError{Message: "Feed URL must use host www.ardaudiothek.de or www.ardsounds.de."}
 	}
 	return u.String(), nil
 }

@@ -20,6 +20,7 @@ type roundTripFunc func(req *http.Request) (*http.Response, error)
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 const testAudiothekURL = "https://www.ardaudiothek.de/sendung/jagd-auf-fantomas-ard-hoerspiel-serie/urn:ard:show:ef3205b54d97da0e/"
+const testArdSoundsURL = "https://www.ardsounds.de/sendung/reclaim-tic-tac-toe/urn:ard:show:bc0ac195183639e0/"
 
 func readFixture(t *testing.T) string {
 	t.Helper()
@@ -126,6 +127,39 @@ func TestRSSFeedEndpointReturnsCachedDocument(t *testing.T) {
 	}
 	if requestCount != 1 {
 		t.Errorf("upstream hit %d times, want 1", requestCount)
+	}
+}
+
+func TestRSSFeedEndpointSupportsArdSoundsHost(t *testing.T) {
+	sampleHTML := readFixture(t)
+
+	var requestedURL string
+	appSrv := newTestServerWith(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		requestedURL = req.URL.String()
+		return &http.Response{
+			StatusCode: 200,
+			Body:       io.NopCloser(strings.NewReader(sampleHTML)),
+			Header:     http.Header{"Content-Type": []string{"text/html; charset=utf-8"}},
+		}, nil
+	}))
+	defer appSrv.Close()
+
+	encodedURL := url.QueryEscape(testArdSoundsURL)
+	resp, err := http.Get(appSrv.URL + "/rss/feed/" + encodedURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", resp.StatusCode, string(body))
+	}
+	if requestedURL != testArdSoundsURL {
+		t.Fatalf("upstream URL = %q, want %q", requestedURL, testArdSoundsURL)
+	}
+	if !strings.Contains(string(body), "<rss") {
+		t.Fatalf("expected RSS document, got: %s", string(body))
 	}
 }
 
