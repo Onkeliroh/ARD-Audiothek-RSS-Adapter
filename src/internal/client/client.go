@@ -74,5 +74,5 @@ func (c *ShowPageClient) FetchShow(pageURL string) (*models.ShowDetails, error) 
 		return nil, &ShowRetrievalError{Message: fmt.Sprintf("Failed to read response body from %s: %s", normalizedURL, err)}
 	}
 
-	return parser.Parse(string(bodyBytes))
+	return parser.Parse(string(bodyBytes), normalizedURL)
 }

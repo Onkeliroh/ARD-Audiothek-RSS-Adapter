@@ -5,7 +5,7 @@ STATICCHECK ?= honnef.co/go/tools/cmd/staticcheck@v0.7.0
 PACKAGES ?= ./...
 BINARY ?= server
 
-.PHONY: help deps tidy lint test cover build check ci docker-build clean
+.PHONY: help deps tidy lint lint-fix test cover build check ci docker-build clean
 
 help:
 	@echo "Targets:"

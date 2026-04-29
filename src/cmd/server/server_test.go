@@ -161,6 +161,14 @@ func TestRSSFeedEndpointSupportsArdSoundsHost(t *testing.T) {
 	if !strings.Contains(string(body), "<rss") {
 		t.Fatalf("expected RSS document, got: %s", string(body))
 	}
+	if strings.Contains(string(body), "www.ardaudiothek.de") {
+		t.Errorf("RSS links should not contain ardaudiothek.de for an ardsounds.de request; body excerpt: %s",
+			string(body)[:min(500, len(body))])
+	}
+	if !strings.Contains(string(body), "www.ardsounds.de") {
+		t.Errorf("RSS links should contain www.ardsounds.de for an ardsounds.de request; body excerpt: %s",
+			string(body)[:min(500, len(body))])
+	}
 }
 
 func TestRSSFeedBubblesUpstreamFailures(t *testing.T) {
